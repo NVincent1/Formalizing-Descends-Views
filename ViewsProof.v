@@ -13,16 +13,6 @@ Axiom FunEquality :
   f = g <-> forall (x : T1), f x = g x
 .
 
-Theorem TrueEquality :
-  forall (T : Type) (x : T) (y : T),
-  (fun _ : True => x) = (fun _ : True => y) -> x = y.
-Proof.
-  intros. apply FunEquality in H. apply H. apply I.
-Qed.
-
-Axiom TrueFun :
-  forall (T : Type) (f : True -> T) (g : True -> T) (x : True),
-  f x = g x -> f = g.
 
 Notation "h :: tl" := (Cons _ h tl).
 Notation "[]" := (Nil _).
@@ -167,6 +157,8 @@ Proof.
   split; reflexivity.
 Qed.
 
+(* Need a property stronger than injectivity because of f = (fun (x : Idx n) => x%n), injective
+although (map f) does not conserve injectivity *)
 Proposition map_conserve_injectivity :
   forall A B (n : nat) (f : ViewArray A -> ViewArray B),
     conserveInjectivity f ->
@@ -175,8 +167,8 @@ Proof.
   intros. unfold conserveInjectivity in *. unfold map in *.
     intros. destruct x,y. 
     unfold isInjective in *. simpl in *.
-    
-Qed.
+    unfold partialApp in H1. 
+Admitted.
 
 
 

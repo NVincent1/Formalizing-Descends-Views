@@ -54,17 +54,11 @@ Proof.
   intros. rewrite Nat.mul_comm. rewrite Nat.Div0.mod_add. reflexivity.
 Qed.
 
-Lemma mod_eq :
-  forall a b, a < b -> a = a mod b.
-Proof.
-  intros. apply Nat.mod_small in H. symmetry. apply H.
-Qed.
-
 Lemma projection_injective :
   forall k a b x y, a < k -> x < k -> a + k*b = x + k*y -> (a,b) = (x,y).
 Proof.
   intros. assert (a = x). apply eq_mod with (c := k) in H1. rewrite mod_red in H1. rewrite mod_red in H1.
-    rewrite <- mod_eq in H1. rewrite <- mod_eq in H1. apply H1.
+    rewrite Nat.mod_small in H1. symmetry in H1. rewrite Nat.mod_small in H1. symmetry. apply H1.
     apply H0. apply H. subst. apply add_injective in H1. apply Nat.mul_cancel_l in H1. subst. reflexivity.
     destruct k. inversion H0. intro. inversion H3.
 Qed.
