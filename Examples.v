@@ -64,3 +64,17 @@ Proof.
   unfold f_annoying in *.
   apply to_nat_injective in H. apply H.
 Qed.
+
+Example injectivity_is_not_enough :
+  ~ isInjective (map (f_annoying) (group 2 2 (to_view 4))).
+Proof.
+  unfold not. intros.
+  unfold isInjective in H.
+  assert (0 < 2). apply le_S. apply le_n.
+  assert (1 < 2). apply le_n.
+  assert (map f_annoying (group 2 2 (to_view 4)) (Id _ 0 H0,(Id _ 0 H0,I)) =
+          map f_annoying (group 2 2 (to_view 4)) (Id _ 1 H1,(Id _ 0 H0,I))).
+  reflexivity.
+  apply H in H2. inversion H2.
+Qed.
+
