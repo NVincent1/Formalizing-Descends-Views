@@ -28,17 +28,6 @@ end.
 Notation "[[ T ; n ]]" := (n::T).
 Notation "[[ ; n ]]" := (n::[]).
 
-Axiom FunOverlap :
-  forall A B (f : A -> B) (g : A -> B),
-  f = g <-> exists x x', f x = g x'.
-
-
-Fixpoint Injective {A : List nat} : ViewArray A -> Prop :=
-  match A with
-  | [] => fun (f : nat) => True
-  | n::tl => fun (f : Idx n -> ViewArray tl) => (forall (x : Idx n) (y : Idx n), f x = f y -> x = y) /\ (forall i, Injective (f i))
-end.
-
 Definition to_view (n : nat) : ViewArray[[;n]] :=
   fun i => to_nat i.
 
