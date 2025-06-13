@@ -41,17 +41,26 @@ end.
 Definition Injective {A : List nat} (v : ViewArray A) : Prop :=
   forall x y, (curry_totalApp v x) = (curry_totalApp v y) -> x = y.
 
+(* Equivalent to injectivity over (ViewArray A * Tuple B) :
+  (f : (ViewArray A * Tuple B) -> nat),
+  forall C (v : C -> ViewArray A) injective,
+  forall x y x' y',
+  f (v x, y) = f (v x', y') -> (v x, y) = (v x', y')
+  and, as v is injective, we have
+  f (v x, y) = f (v x', y') -> (x,y) = (x',y')
 
-Definition preserveInjectivity {A : List nat} {B : List nat} (f : ViewArray A -> ViewArray B) :=
+(thus equivalent to forall (x,y) (x',y'), f (x,y) = f (x',y') -> (x,y) = (x',y'))
+*)
+Definition curry_Injective {A : List nat} {B : List nat} (f : ViewArray A -> ViewArray B) :=
   forall (C : List nat) (v : ViewArray (C++A)),
   Injective v ->
   (forall (i j : Tuple C) (x y : Tuple B),
   curry_totalApp (f (curry_partialApp v i)) x = curry_totalApp (f (curry_partialApp v j)) y -> i = j /\ x = y).
 
-Proposition preserveInjectivity_is_correct :
-  forall A B (f : ViewArray A -> ViewArray B), preserveInjectivity f -> (forall v, Injective v -> Injective (f v)).
+Proposition curry_Injective_is_correct :
+  forall A B (f : ViewArray A -> ViewArray B), curry_Injective f -> (forall v, Injective v -> Injective (f v)).
 Proof.
-  unfold preserveInjectivity.
+  unfold curry_Injective.
   intros A B f Hf v Hinj x y.
   unfold Injective.
   intros.
@@ -223,9 +232,9 @@ Proof.
 Qed.
 
 Proposition reverse_preserves_injectivity :
-  forall T n, preserveInjectivity reverse (A := (n::T)).
+  forall T n, curry_Injective reverse (A := (n::T)).
 Proof.
-  unfold preserveInjectivity.
+  unfold curry_Injective.
   intros T n C v Hinj i j x y H.
   unfold reverse in H.
   destruct x as [x tx],y as [y ty].
@@ -257,9 +266,9 @@ Proof.
 Qed.
 
 Proposition takeleft_preserves_injectivity :
-  forall T n b, preserveInjectivity (take_left b) (A := (b+n::T)).
+  forall T n b, curry_Injective (take_left b) (A := (b+n::T)).
 Proof.
-  unfold preserveInjectivity.
+  unfold curry_Injective.
   intros T n b C v Hinj i j x y H.
   destruct x as [x tx],y as [y ty].
   destruct C.
@@ -286,9 +295,9 @@ Proof.
 Qed.
 
 Proposition takeright_preserves_injectivity :
-  forall T n a, preserveInjectivity (take_right a) (A := (a+n::T)).
+  forall T n a, curry_Injective (take_right a) (A := (a+n::T)).
 Proof.
-  unfold preserveInjectivity.
+  unfold curry_Injective.
   intros T n a C v Hinj i j x y H.
   destruct x as [x tx],y as [y ty].
   destruct C.
@@ -318,9 +327,9 @@ Proof.
 Qed.
 
 Proposition transpose_preserves_injectivity :
-  forall T m n, preserveInjectivity transpose (A := (m::n::T)).
+  forall T m n, curry_Injective transpose (A := (m::n::T)).
 Proof.
-  unfold preserveInjectivity.
+  unfold curry_Injective.
   intros T m n C v Hinj i j x y H.
   destruct C.
   - destruct i,j,x as [xi tx], y as [yi ty], tx as [xj tx], ty as [yj ty]. unfold Injective in Hinj.
@@ -345,9 +354,9 @@ Proof.
 Qed.
 
 Proposition group_preserves_injectivity :
-  forall T m n, preserveInjectivity (group m) (A := (m*n::T)).
+  forall T m n, curry_Injective (group m) (A := (m*n::T)).
 Proof.
-  unfold preserveInjectivity.
+  unfold curry_Injective.
   intros T m n C v Hinj i j x y H.
   destruct C.
   - destruct i,j,x as [xi tx], y as [yi ty], tx as [xj tx], ty as [yj ty]. unfold Injective in Hinj.
@@ -387,9 +396,9 @@ Qed.
 
 
 Proposition map_preserves_injectivity :
-  forall A B (n : nat) (f : ViewArray A -> ViewArray B), preserveInjectivity f -> preserveInjectivity (map f (n := n)).
+  forall A B (n : nat) (f : ViewArray A -> ViewArray B), curry_Injective f -> curry_Injective (map f (n := n)).
 Proof.
-  unfold preserveInjectivity.
+  unfold curry_Injective.
   intros A B n f Hf C v Hinj i j x y H.
   destruct C.
   - destruct i,j,x as [xi tx], y as [yi ty].
