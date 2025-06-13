@@ -41,20 +41,22 @@ Proof.
   destruct l. inversion Hi. simpl. unfold gt. unfold lt. rewrite Nat.sub_0_r. apply le_n_S. apply Nat.le_sub_l.
 Qed.
 
-Definition selectProof {b : nat} {a : nat} {l : nat} {i : Idx (b-a)}:
-  b + l > a + to_nat i.
+Definition takeleftProof {b : nat} {n : nat} {i : Idx b} :
+ to_nat i < b + n.
 Proof.
-  destruct i as [n Hi]. simpl.
-  assert (a + n < b). {
-    destruct (b-a) eqn:E.
-    - inversion Hi.
-    - unfold lt in Hi. apply Nat.add_le_mono_r with (p := a) in Hi. simpl in Hi. rewrite Nat.add_comm in Hi.
-    assert (b - a + a = b). {
-        apply Nat.sub_add. apply Nat.add_sub_eq_nz in E. rewrite <- E. apply Nat.le_add_r. intro. inversion H.
-    } assert (S (n0 + a) = b - a + a).  rewrite <- Nat.add_succ_l. rewrite <- E. reflexivity. rewrite H0 in Hi.
-    rewrite <- H. apply Hi.
-    }
-    apply Nat.le_trans with (m := b). apply H. apply Nat.le_add_r. 
+  apply Nat.lt_lt_add_r.
+  apply BoundedInt.
+Qed.
+
+Definition takerightProof {a : nat} {n : nat} {i : Idx (n-a)} :
+ a + to_nat i < a + n.
+Proof.
+  apply Nat.add_lt_mono_l.
+  destruct i.
+  simpl.
+  assert (n - a <= n). apply Nat.le_sub_l.
+  apply Nat.le_trans with (m := (n-a)).
+  apply H. apply H0.
 Qed.
 
 Definition groupProof {m : nat} {n : nat} {i : Idx m} {j : Idx n} :

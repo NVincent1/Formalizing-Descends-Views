@@ -34,8 +34,11 @@ Definition to_view (n : nat) : ViewArray[[;n]] :=
 Definition reverse {T : List nat} {n : nat} (v : ViewArray[[T;n]]) : ViewArray[[T;n]] :=
   fun i => v (Id n (n - 1 - to_nat i) reverseProof).
 
-Definition select {T : List nat} {n : nat} (a : nat) (b : nat) (v : ViewArray[[T;b+n]]) : ViewArray[[T;b-a]] :=
-  fun i => v (Id (b+n) (a + to_nat i) selectProof).
+Definition take_left {T : List nat} {n : nat} (b : nat) (v : ViewArray[[T;b+n]]) : ViewArray[[T;b]] :=
+  fun i => v (Id (b+n) (to_nat i) takeleftProof).
+
+Definition take_right {T : List nat} {n : nat} (a : nat) (v : ViewArray[[T;a+n]]) : ViewArray[[T;n-a]] :=
+  fun i => v (Id (a+n) (a + to_nat i) takerightProof).
 
 Definition transpose {T : List nat} {n : nat} {m : nat} (v : ViewArray[[ [[T;m]];n ]]) : ViewArray[[ [[T;n]];m ]] :=
   fun i j => v j i.
