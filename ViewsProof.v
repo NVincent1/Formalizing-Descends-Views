@@ -41,9 +41,10 @@ end.
 Definition Injective {A : List nat} (v : ViewArray A) : Prop :=
   forall x y, (curry_totalApp v x) = (curry_totalApp v y) -> x = y.
 
-(* Equivalent to injectivity over (ViewArray A * Tuple B) :
+(*
+Equivalent to injectivity over (ViewArray A * Tuple B) :
   (f : (ViewArray A * Tuple B) -> nat),
-  forall C (v : C -> ViewArray A) injective,
+  forall C (v : Tuple C -> ViewArray A) injective,
   forall x y x' y',
   f (v x, y) = f (v x', y') -> (v x, y) = (v x', y')
   and, as v is injective, we have
