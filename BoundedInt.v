@@ -3,15 +3,15 @@ From Views Require Import Lemmas.
 
 
 Inductive Idx (s : nat) : Type := 
-  | Id (n : nat) (H : n < s) : Idx s.
+  | idx (n : nat) (H : n < s) : Idx s.
 
 Definition to_nat {s : nat} (i : Idx s) : nat :=
   match i with
-  | Id _ n _ => n
+  | idx _ n _ => n
 end.
 
 Definition to_Idx (s : nat) (n : nat) (H : s > n) : Idx s :=
-  Id _ n H
+  idx _ n H
 .
 
 Theorem BoundedInt :
@@ -23,7 +23,7 @@ Proof.
 Qed.
 
 Axiom unif_Idx :
-  forall (n : nat) (s : nat) (H1 : n < s) (H2 : n < s), Id _ n H1 = Id _ n H2.
+  forall (n : nat) (s : nat) (H1 : n < s) (H2 : n < s), idx _ n H1 = idx _ n H2.
 
 Theorem to_nat_injective :
   forall s (i : Idx s) (j : Idx s), to_nat i = to_nat j -> i = j.

@@ -32,19 +32,19 @@ Definition to_view (n : nat) : ViewArray[[;n]] :=
   fun i => to_nat i.
 
 Definition reverse {T : List nat} {n : nat} (v : ViewArray[[T;n]]) : ViewArray[[T;n]] :=
-  fun i => v (Id n (n - 1 - to_nat i) reverseProof).
+  fun i => v (idx n (n - 1 - to_nat i) reverseProof).
 
 Definition take_left {T : List nat} {n : nat} (b : nat) (v : ViewArray[[T;b+n]]) : ViewArray[[T;b]] :=
-  fun i => v (Id (b+n) (to_nat i) takeleftProof).
+  fun i => v (idx (b+n) (to_nat i) takeleftProof).
 
 Definition take_right {T : List nat} {n : nat} (a : nat) (v : ViewArray[[T;a+n]]) : ViewArray[[T;n-a]] :=
-  fun i => v (Id (a+n) (a + to_nat i) takerightProof).
+  fun i => v (idx (a+n) (a + to_nat i) takerightProof).
 
 Definition transpose {T : List nat} {n : nat} {m : nat} (v : ViewArray[[ [[T;m]];n ]]) : ViewArray[[ [[T;n]];m ]] :=
   fun i j => v j i.
 
 Definition group {T : List nat} {n : nat} (m : nat) (v : ViewArray[[T;m*n]]) : ViewArray[[ [[T;m]];n]] :=
-  fun i j => v (Id (m*n) (to_nat j + m*(to_nat i)) groupProof).
+  fun i j => v (idx (m*n) (to_nat j + m*(to_nat i)) groupProof).
 
 Definition map {A : List nat} {B : List nat} {n : nat} (f : ViewArray A -> ViewArray B) (v : ViewArray[[A;n]]) : ViewArray[[B;n]] :=
   fun i => f (v i).
