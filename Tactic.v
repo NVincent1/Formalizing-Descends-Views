@@ -52,7 +52,13 @@ Ltac2 applyHinj2 (f:constr) :=
 end.
 
 
-Ltac2 autoProof (f:constr) (fid:ident) (dim : int):=
+Ltac2 reordering_autoProof (f:constr) (fid:ident) (dim : int):=
+(* Automatic proof of correctness for reordering functions :
+  takes as inputs :
+  - a hint function, the reordering function, given as constr and ident
+  - the expected number of dimension of the input viewArray
+  (cf. the examples in `Test.v`)
+*)
   introductions ();
   remember_destruction ();
   do dim (destruction ());
