@@ -214,12 +214,13 @@ Proof.
   apply Hinj.
 Qed.
 
-Proposition to_view_injective :
-  forall n, Injective (to_view n).
+(** identity_view *)
+Proposition identity_view_injective :
+  forall n, Injective (identity_view n).
 Proof.
   unfold Injective.
   intros n x y H.
-  unfold to_view in H.
+  unfold identity_view in H.
   simpl in H.
   destruct x as [x tx],y as [y ty].
   apply to_nat_injective in H.
@@ -246,14 +247,14 @@ Proof.
   set (fx := function x).
   set (fy := function y).
   destruct x as [x tx],y as [y ty].
-  intros. unfold to_view in function_injective,fx,fy; simpl in function_injective,fx,fy.
+  intros. unfold identity_view in function_injective,fx,fy; simpl in function_injective,fx,fy.
   destruct C.
   - simpl in *. unfold Injective in Hinj.
     destruct i,j.
     apply Hinj with (x := fx) (y := fy) in H.
     unfold fx,fy in H.
     (* Generate goal
-    (idx n (reverse (to_view n) x) reverseProof, tx) = (idx n (reverse (to_view n) y) reverseProof, ty)
+    (idx n (reverse (identity_view n) x) reverseProof, tx) = (idx n (reverse (identity_view n) y) reverseProof, ty)
     -> x,tx = y,ty *)
     inversion H.
     apply function_injective in H1.
@@ -288,7 +289,7 @@ Proof.
   set (fx := function x).
   set (fy := function y).
   destruct x as [x tx],y as [y ty].
-  intros. unfold to_view in function_injective,fx,fy; simpl in function_injective,fx,fy.
+  intros. unfold identity_view in function_injective,fx,fy; simpl in function_injective,fx,fy.
   destruct C.
   - simpl in *. unfold Injective in Hinj.
     destruct i,j.
@@ -331,7 +332,7 @@ Proof.
   set (fx := function x).
   set (fy := function y).
   destruct x as [x tx],y as [y ty].
-  intros. unfold to_view in function_injective,fx,fy; simpl in function_injective,fx,fy.
+  intros. unfold identity_view in function_injective,fx,fy; simpl in function_injective,fx,fy.
   destruct C.
   - simpl in *. unfold Injective in Hinj.
     destruct i,j.
@@ -370,7 +371,7 @@ Proof.
   set (fx := function x).
   set (fy := function y).
   destruct x as [x1 tx],y as [y1 ty], tx as [x2 tx], ty as [y2 ty].
-  intros. unfold to_view in function_injective,fx,fy; simpl in function_injective,fx,fy.
+  intros. unfold identity_view in function_injective,fx,fy; simpl in function_injective,fx,fy.
   destruct C.
   - simpl in *. unfold Injective in Hinj.
     destruct i,j.
@@ -416,7 +417,7 @@ Proof.
   set (fx := function x).
   set (fy := function y).
   destruct x as [x1 tx],y as [y1 ty], tx as [x2 tx], ty as [y2 ty].
-  intros. unfold to_view in function_injective,fx,fy; simpl in function_injective,fx,fy.
+  intros. unfold identity_view in function_injective,fx,fy; simpl in function_injective,fx,fy.
   destruct C.
   - simpl in *. unfold Injective in Hinj.
     destruct i,j.

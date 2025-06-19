@@ -27,8 +27,7 @@ end.
 Notation "[[ T ; n ]]" := (n::T).
 Notation "[[ ; n ]]" := (n::[]).
 
-(** TODO : change this function name *)
-Definition to_view (n : nat) : ViewArray[[;n]] :=
+Definition identity_view (n : nat) : ViewArray[[;n]] :=
   fun i => to_nat i.
 
 Definition reverse {T : List nat} {n : nat} (v : ViewArray[[T;n]]) : ViewArray[[T;n]] :=

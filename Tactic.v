@@ -58,7 +58,7 @@ end.
 
 
 Ltac2 reordering_autoProof (f:constr) (fid:ident) (dim : int):=
-(* Automatic proof of correctness for reordering functions :
+(* Semi-Automatic proof of correctness for reordering functions :
   takes as inputs :
   - a hint function, the reordering function, given as constr and ident
   - the expected number of dimension of the input viewArray
