@@ -41,16 +41,19 @@ end.
 Definition Injective {A : List nat} (v : ViewArray A) : Prop :=
   forall x y, (curry_totalApp v x) = (curry_totalApp v y) -> x = y.
 
-Definition curry_Injective {A : List nat} {B : List nat} (f : ViewArray A -> ViewArray B) :=
+(*
+preserve_Injectivity f <-> (fun (g : C -> ViewArray A) x y -> f (g x) y) preserves injectivity of g
+*)
+Definition preserve_Injectivity {A : List nat} {B : List nat} (f : ViewArray A -> ViewArray B) :=
   forall (C : List nat) (v : ViewArray (C++A)),
   Injective v ->
   (forall (i j : Tuple C) (x y : Tuple B),
   curry_totalApp (f (curry_partialApp v i)) x = curry_totalApp (f (curry_partialApp v j)) y -> (i,x) = (j,y)).
 
-Proposition curry_Injective_implies_preserving_injectivity :
-  forall A B (f : ViewArray A -> ViewArray B), curry_Injective f -> (forall v, Injective v -> Injective (f v)).
+Proposition preserve_Injectivity_implies_preserving_view_injectivity :
+  forall A B (f : ViewArray A -> ViewArray B), preserve_Injectivity f -> (forall v, Injective v -> Injective (f v)).
 Proof.
-  unfold curry_Injective.
+  unfold preserve_Injectivity.
   intros A B f Hf v Hinj x y.
   unfold Injective.
   intros.
@@ -222,7 +225,7 @@ Proof.
 Qed.
 
 Proposition reverse_preserves_injectivity :
-  forall T n, curry_Injective reverse (A := (n::T)).
+  forall T n, preserve_Injectivity reverse (A := (n::T)).
 Proof.
   intros T n C v Hinj i j x y H.
   assert (function_injective : (forall x y, reverse (to_view n) x = reverse (to_view n) y -> x = y)). {
@@ -266,7 +269,7 @@ Proof.
 Qed.
 
 Proposition take_left_preserves_injectivity :
-  forall T n b, curry_Injective (take_left b) (A := ((b+n)::T)).
+  forall T n b, preserve_Injectivity (take_left b) (A := ((b+n)::T)).
 Proof.
   intros T n b C v Hinj i j x y H.
   assert (function_injective : (forall x y, (take_left b) (to_view (b+n)) x = (take_left b) (to_view (b+n)) y -> x = y)). {
@@ -307,7 +310,7 @@ Proof.
 Qed.
 
 Proposition take_right_preserves_injectivity :
-  forall T n a, curry_Injective (take_right a) (A := ((a+n)::T)).
+  forall T n a, preserve_Injectivity (take_right a) (A := ((a+n)::T)).
 Proof.
   intros T n a C v Hinj i j x y H.
   assert (function_injective : (forall x y, (take_right a) (to_view (a+n)) x = (take_right a) (to_view (a+n)) y -> x = y)). {
@@ -349,9 +352,9 @@ Proof.
 Qed.
 
 Proposition transpose_preserves_injectivity :
-  forall T m n, curry_Injective transpose (A := (m::n::T)).
+  forall T m n, preserve_Injectivity transpose (A := (m::n::T)).
 Proof.
-  unfold curry_Injective.
+  unfold preserve_Injectivity.
   intros T m n C v Hinj i j x y H.
   assert (function_injective : True). trivial.
   set (function := fun (x : Tuple (n::m::T)) => match x with | (i,(j,tx)) => (j,(i,tx)) end).
@@ -388,9 +391,9 @@ Qed.
 
 
 Proposition group_preserves_injectivity :
-  forall T m n, curry_Injective (group m) (A := (m*n::T)).
+  forall T m n, preserve_Injectivity (group m) (A := (m*n::T)).
 Proof.
-  unfold curry_Injective.
+  unfold preserve_Injectivity.
   intros T m n C v Hinj i j x y H.
   assert (function_injective : forall (xi yi : Idx n) (xj yj : Idx m), to_nat xj + m * to_nat xi = to_nat yj + m * to_nat yi -> (xi,xj) = (yi,yj)). {
     intros. apply projection_injective in H0.
@@ -434,9 +437,9 @@ Qed.
 
 
 Proposition map_preserves_injectivity :
-  forall A B (n : nat) (f : ViewArray A -> ViewArray B), curry_Injective f -> curry_Injective (map f (n := n)).
+  forall A B (n : nat) (f : ViewArray A -> ViewArray B), preserve_Injectivity f -> preserve_Injectivity (map f (n := n)).
 Proof.
-  unfold curry_Injective.
+  unfold preserve_Injectivity.
   intros A B n f Hf C v Hinj i j x y H.
   assert (function_injective : forall (xi yi : Idx n) (tx ty : (Tuple B)),
   curry_totalApp (f (curry_partialApp v i xi)) tx = curry_totalApp (f (curry_partialApp v j yi)) ty ->
@@ -457,4 +460,6 @@ Proof.
   apply function_injective in H.
   injection H. intros;subst;split;reflexivity.
 Qed.
+
+
 
