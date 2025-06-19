@@ -321,13 +321,13 @@ Proposition take_right_preserves_injectivity :
   forall T n a, preserve_Injectivity (take_right a) (A := ((a+n)::T)).
 Proof.
   intros T n a C v Hinj i j x y H.
-  assert (function_injective : (forall (x y : Idx (n-a)), a + to_nat x = a + to_nat y -> x = y)). {
+  assert (function_injective : (forall (x y : Idx n), a + to_nat x = a + to_nat y -> x = y)). {
     intros x' y' H'.
     apply add_injective in H'.
     apply to_nat_injective in H'.
     apply H'.
   }
-  set (function := fun (x : Tuple ((n-a)::T)) => match x with | (i,tx) => (idx (a+n) (a+to_nat i) takerightProof,tx) end).
+  set (function := fun (x : Tuple (n::T)) => match x with | (i,tx) => (idx (a+n) (a+to_nat i) takerightProof,tx) end).
   simpl in H.
   set (fx := function x).
   set (fy := function y).

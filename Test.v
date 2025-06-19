@@ -36,7 +36,7 @@ Qed.
 Theorem test_auto_take_right : forall T n a, preserve_Injectivity (take_right a) (A := ((a+n)::T)).
 Proof.
   intros T n a.
-  set (function := fun (x : Tuple ((n-a)::T)) => match x with | (i,tx) => (idx (a+n) (a + to_nat i) takerightProof,tx) end).
+  set (function := fun (x : Tuple (n::T)) => match x with | (i,tx) => (idx (a+n) (a + to_nat i) takerightProof,tx) end).
   reordering_autoProof ('function) (@function) 0.
   - apply add_injective in H1. apply to_nat_injective in H1. subst. reflexivity.
   - apply add_injective in H3. apply to_nat_injective in H3. subst. reflexivity.

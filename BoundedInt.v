@@ -48,15 +48,11 @@ Proof.
   apply BoundedInt.
 Qed.
 
-Definition takerightProof {a : nat} {n : nat} {i : Idx (n-a)} :
+Definition takerightProof {a : nat} {n : nat} {i : Idx n} :
  a + to_nat i < a + n.
 Proof.
   apply Nat.add_lt_mono_l.
-  destruct i.
-  simpl.
-  assert (n - a <= n). apply Nat.le_sub_l.
-  apply Nat.le_trans with (m := (n-a)).
-  apply H. apply H0.
+  apply BoundedInt.
 Qed.
 
 Definition groupProof {m : nat} {n : nat} {i : Idx m} {j : Idx n} :

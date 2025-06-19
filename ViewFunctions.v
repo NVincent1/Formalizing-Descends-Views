@@ -28,6 +28,8 @@ Notation "[[ T ; n ]]" := (n::T).
 Notation "[[ ; n ]]" := (n::[]).
 
 Definition identity_view (n : nat) : ViewArray[[;n]] :=
+(* View resulting from applying `to_view` on an array :
+  i-th element of the view is the i-th element of the array *)
   fun i => to_nat i.
 
 Definition reverse {T : List nat} {n : nat} (v : ViewArray[[T;n]]) : ViewArray[[T;n]] :=
@@ -36,7 +38,7 @@ Definition reverse {T : List nat} {n : nat} (v : ViewArray[[T;n]]) : ViewArray[[
 Definition take_left {T : List nat} {n : nat} (b : nat) (v : ViewArray[[T;b+n]]) : ViewArray[[T;b]] :=
   fun i => v (idx (b+n) (to_nat i) takeleftProof).
 
-Definition take_right {T : List nat} {n : nat} (a : nat) (v : ViewArray[[T;a+n]]) : ViewArray[[T;n-a]] :=
+Definition take_right {T : List nat} {n : nat} (a : nat) (v : ViewArray[[T;a+n]]) : ViewArray[[T;n]] :=
   fun i => v (idx (a+n) (a + to_nat i) takerightProof).
 
 Definition transpose {T : List nat} {n : nat} {m : nat} (v : ViewArray[[ [[T;m]];n ]]) : ViewArray[[ [[T;n]];m ]] :=
