@@ -12,7 +12,6 @@ Inductive List (T : Type) : Type :=
 Notation "h :: tl" := (Cons _ h tl).
 Notation "[]" := (Nil _).
 
-
 Fixpoint Tuple (d : List nat) : Type :=
   match d with
   | [] => True
@@ -21,13 +20,14 @@ end.
 
 Fixpoint ViewArray (d : List nat) :=
   match d with
-  | [] => nat
+  | [] => nat (* Index in the underlying array (could be changed into a Idx (bounded integer) with size given as a parameter) *)
   | h::tl => Idx h -> (ViewArray tl)
 end.
 
 Notation "[[ T ; n ]]" := (n::T).
 Notation "[[ ; n ]]" := (n::[]).
 
+(** TODO : change this function name *)
 Definition to_view (n : nat) : ViewArray[[;n]] :=
   fun i => to_nat i.
 

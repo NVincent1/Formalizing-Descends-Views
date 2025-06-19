@@ -8,7 +8,7 @@ From Views Require Import Tactic.
 Require Import PeanoNat.
 
 
-Theorem test_auto_reverse : forall T n, curry_Injective reverse (A := (n::T)).
+Theorem test_auto_reverse : forall T n, preserve_Injectivity reverse (A := (n::T)).
 Proof.
   intros T n.
   set (function := fun (x : Tuple (n::T)) => match x with | (i,tx) => (idx n (n - 1 - to_nat i) reverseProof,tx) end).
@@ -24,7 +24,7 @@ Proof.
   apply H' in H3; subst; reflexivity.
 Qed.
 
-Theorem test_auto_take_left : forall T n b, curry_Injective (take_left b) (A := ((b+n)::T)).
+Theorem test_auto_take_left : forall T n b, preserve_Injectivity (take_left b) (A := ((b+n)::T)).
 Proof.
   intros T n b.
   set (function := fun (x : Tuple (b::T)) => match x with | (i,tx) => (idx (b+n) (to_nat i) takeleftProof,tx) end).
@@ -33,7 +33,7 @@ Proof.
   - apply to_nat_injective in H3. subst. reflexivity.
 Qed.
 
-Theorem test_auto_take_right : forall T n a, curry_Injective (take_right a) (A := ((a+n)::T)).
+Theorem test_auto_take_right : forall T n a, preserve_Injectivity (take_right a) (A := ((a+n)::T)).
 Proof.
   intros T n a.
   set (function := fun (x : Tuple ((n-a)::T)) => match x with | (i,tx) => (idx (a+n) (a + to_nat i) takerightProof,tx) end).
@@ -42,14 +42,14 @@ Proof.
   - apply add_injective in H3. apply to_nat_injective in H3. subst. reflexivity.
 Qed.
 
-Theorem test_auto_transpose : forall T n m, curry_Injective transpose (A := (m::n::T)).
+Theorem test_auto_transpose : forall T n m, preserve_Injectivity transpose (A := (m::n::T)).
 Proof.
   intros T n m.
   set (function := fun (x : Tuple (n::m::T)) => match x with | (i,(j,tx)) => (j,(i,tx)) end).
   reordering_autoProof ('function) (@function) 1; reflexivity.
 Qed.
 
-Theorem test_auto_group : forall T n m, curry_Injective (group m) (A := (m*n::T)).
+Theorem test_auto_group : forall T n m, preserve_Injectivity (group m) (A := (m*n::T)).
 Proof.
   intros T n m.
   set (function := fun (x : Tuple (n::m::T)) => match x with | (i,(j,tx)) => (idx (m*n) (to_nat j + m*(to_nat i)) groupProof,tx) end).

@@ -13,13 +13,7 @@ end.
 
 Notation "A ++ B" := (cat A B).
 
-
-Fixpoint tupcat {A : List nat} {B : List nat} : Tuple A -> Tuple B -> Tuple (A++B) :=
-  match A with
-  | [] => fun (_ : Tuple []) (y : Tuple B) => y
-  | A => fun (x : Tuple A) (y : Tuple B) => match x with | (i,x) => (i,tupcat x y) end
-end.
-
+(* Application viewed with curryfication *)
 Fixpoint curry_partialApp {A : List nat} {B : List nat} : ViewArray (A++B) -> Tuple A -> ViewArray B :=
   match A with
   | [] => fun (v : ViewArray ([]++B)) (x : Tuple []) => v
@@ -32,62 +26,42 @@ Fixpoint curry_totalApp {A : List nat} : ViewArray A -> Tuple A -> nat :=
   | A => fun (v : ViewArray A) (x : Tuple A) => match x with | (x,y) => curry_totalApp (v x) y end
 end.
 
-Fixpoint reorder {C : List nat} {n : nat} {A : List nat}  : ViewArray (C++[[A;n]]) ->  ViewArray [[C++A;n]] :=
-  match C with
-  | [] => fun (v : ViewArray ([]++[[A;n]])) x => v x
-  | C => fun (v : ViewArray (C++[[A;n]])) x => fun i => reorder (v i) x
-end.
-
+(* v is injective if it does not contain twice the same index in the underlying array *)
 Definition Injective {A : List nat} (v : ViewArray A) : Prop :=
   forall x y, (curry_totalApp v x) = (curry_totalApp v y) -> x = y.
 
-(*
-preserve_Injectivity f <-> (fun (g : C -> ViewArray A) x y -> f (g x) y) preserves injectivity of g
-*)
-Definition preserve_Injectivity {A : List nat} {B : List nat} (f : ViewArray A -> ViewArray B) :=
-  forall (C : List nat) (v : ViewArray (C++A)),
-  Injective v ->
-  (forall (i j : Tuple C) (x y : Tuple B),
-  curry_totalApp (f (curry_partialApp v i)) x = curry_totalApp (f (curry_partialApp v j)) y -> (i,x) = (j,y)).
-
-Proposition preserve_Injectivity_implies_preserving_view_injectivity :
-  forall A B (f : ViewArray A -> ViewArray B), preserve_Injectivity f -> (forall v, Injective v -> Injective (f v)).
+Proposition curry_partialApp_keeps_injectivity :
+  forall A B (v : ViewArray (A++B)), Injective v -> (forall i, Injective (curry_partialApp v i)).
 Proof.
-  unfold preserve_Injectivity.
-  intros A B f Hf v Hinj x y.
-  unfold Injective.
-  intros.
-  apply Hf with (C := Nil nat) (x := x) (y := y) (i := I) (j := I) in H.
-  inversion H.
-  reflexivity.
-  apply Hinj.
+  intros A B.
+  induction A.
+  + simpl. intros. apply H.
+  + intros v Hinj i. simpl. destruct i.
+      assert (H:Injective (v i)). {
+        unfold Injective.
+        intros x y H. assert ((i,x) = (i,y)).
+        apply Hinj. apply H. injection H0. trivial.
+      }
+      apply IHA with (i := t) in H.
+      apply H.
 Qed.
 
-Proposition to_view_injective :
-  forall n, Injective (to_view n).
+Fixpoint tupcat {A : List nat} {B : List nat} : Tuple A -> Tuple B -> Tuple (A++B) :=
+  match A with
+  | [] => fun (_ : Tuple []) (y : Tuple B) => y
+  | A => fun (x : Tuple A) (y : Tuple B) => match x with | (i,x) => (i,tupcat x y) end
+end.
+
+Lemma tupcat_injective :
+  forall A B (x1 x2 : Tuple A) (y1 y2 : Tuple B),
+  tupcat x1 y1 = tupcat x2 y2 -> (x1,y1) = (x2,y2).
 Proof.
-  unfold Injective.
-  intros n x y H.
-  unfold to_view in H.
+  intros.
+  induction A.
+  - destruct x1,x2. simpl in H. subst. reflexivity.
+  - destruct x1 as [x1 tx1],x2 as [x2 tx2].
   simpl in H.
-  destruct x as [x tx],y as [y ty].
-  apply to_nat_injective in H.
-  destruct tx,ty.
-  rewrite H.
-  reflexivity.
-Qed.
-
-Lemma reorder_is_correct :
-  forall C A (n : nat) (v : ViewArray (C++(n::A))) (i : Tuple C) (x : Idx n),
-  curry_partialApp v i x = curry_partialApp (reorder v x) i.
-Proof.
-  intros.
-  induction C.
-  - simpl. reflexivity.
-  - destruct i as [i t]. simpl.
-  assert ((curry_partialApp (v i) t x) = curry_partialApp (reorder (v i)) (A := n::C) (B := A) (x, t)).
-  apply IHC.
-  rewrite H. simpl. reflexivity.
+  injection H. intros Htupcat Hx. apply IHA in Htupcat. inversion Htupcat. subst. reflexivity.
 Qed.
 
 Lemma decomposition :
@@ -122,16 +96,45 @@ Proof.
     simpl in *. apply IHC.
 Qed.
 
-Lemma tupcat_injective :
-  forall A B (x1 x2 : Tuple A) (y1 y2 : Tuple B),
-  tupcat x1 y1 = tupcat x2 y2 -> (x1,y1) = (x2,y2).
+
+Lemma injectivity_decomposition :
+  forall A B (v : ViewArray (A++B)),
+  Injective v -> (forall (i j : Tuple A) (x y : Tuple B), (curry_totalApp (curry_partialApp v i) x) = (curry_totalApp (curry_partialApp v j) y)-> (i,x) = (j,y)).
+Proof.
+  intros A B v Hinj i j x y H.
+  destruct A.
+  - destruct i,j. simpl in H. apply Hinj in H. subst;reflexivity.
+  - destruct i as [i ti],j as [j tj].
+    simpl in H.
+    assert (Hx:curry_totalApp (curry_partialApp (v i) ti) x = curry_totalApp v (tupcat (i,ti) (A := (h::A)) x)).
+    symmetry. apply recomposition with (i := (i,ti)).
+    assert (Hy:curry_totalApp (curry_partialApp (v j) tj) y = curry_totalApp v (tupcat (j,tj) (A := (h::A)) y)).
+    symmetry. apply recomposition with (i := (j,tj)).
+    rewrite Hx,Hy in H.
+    apply Hinj in H.
+    apply tupcat_injective in H.
+    injection H.
+    intros; subst. reflexivity.
+Qed.
+
+(* Dimension reordering *)
+Fixpoint reorder {C : List nat} {n : nat} {A : List nat}  : ViewArray (C++[[A;n]]) ->  ViewArray [[C++A;n]] :=
+  match C with
+  | [] => fun (v : ViewArray ([]++[[A;n]])) x => v x
+  | C => fun (v : ViewArray (C++[[A;n]])) x => fun i => reorder (v i) x
+end.
+
+Lemma reorder_is_correct :
+  forall C A (n : nat) (v : ViewArray (C++(n::A))) (i : Tuple C) (x : Idx n),
+  curry_partialApp v i x = curry_partialApp (reorder v x) i.
 Proof.
   intros.
-  induction A.
-  - destruct x1,x2. simpl in H. subst. reflexivity.
-  - destruct x1 as [x1 tx1],x2 as [x2 tx2].
-  simpl in H.
-  injection H. intros Htupcat Hx. apply IHA in Htupcat. inversion Htupcat. subst. reflexivity.
+  induction C.
+  - simpl. reflexivity.
+  - destruct i as [i t]. simpl.
+  assert ((curry_partialApp (v i) t x) = curry_partialApp (reorder (v i)) (A := n::C) (B := A) (x, t)).
+  apply IHC.
+  rewrite H. simpl. reflexivity.
 Qed.
 
 Proposition reorder_keeps_injectivity :
@@ -187,56 +190,58 @@ Proof.
     reflexivity.
 Qed.
 
-Proposition curry_partialApp_keeps_injectivity :
-  forall A B (v : ViewArray (A++B)), Injective v -> (forall i, Injective (curry_partialApp v i)).
+(** MAIN PROOFS *)
+
+(*
+preserve_Injectivity f <-> (fun (g : C -> ViewArray A) x y -> f (g x) y) preserves injectivity of g
+*)
+Definition preserve_Injectivity {A : List nat} {B : List nat} (f : ViewArray A -> ViewArray B) :=
+  forall (C : List nat) (v : ViewArray (C++A)),
+  Injective v ->
+  (forall (i j : Tuple C) (x y : Tuple B),
+  curry_totalApp (f (curry_partialApp v i)) x = curry_totalApp (f (curry_partialApp v j)) y -> (i,x) = (j,y)).
+
+Proposition preserve_Injectivity_implies_preserving_view_injectivity :
+  forall A B (f : ViewArray A -> ViewArray B), preserve_Injectivity f -> (forall v, Injective v -> Injective (f v)).
 Proof.
-  intros A B.
-  induction A.
-  + simpl. intros. apply H.
-  + intros v Hinj i. simpl. destruct i.
-      assert (H:Injective (v i)). {
-        unfold Injective.
-        intros x y H. assert ((i,x) = (i,y)).
-        apply Hinj. apply H. injection H0. trivial.
-      }
-      apply IHA with (i := t) in H.
-      apply H.
+  unfold preserve_Injectivity.
+  intros A B f Hf v Hinj x y.
+  unfold Injective.
+  intros.
+  apply Hf with (C := Nil nat) (x := x) (y := y) (i := I) (j := I) in H.
+  inversion H.
+  reflexivity.
+  apply Hinj.
 Qed.
 
-
-Lemma injectivity_decomposition :
-  forall A B (v : ViewArray (A++B)),
-  Injective v -> (forall (i j : Tuple A) (x y : Tuple B), (curry_totalApp (curry_partialApp v i) x) = (curry_totalApp (curry_partialApp v j) y)-> (i,x) = (j,y)).
+Proposition to_view_injective :
+  forall n, Injective (to_view n).
 Proof.
-  intros A B v Hinj i j x y H.
-  destruct A.
-  - destruct i,j. simpl in H. apply Hinj in H. subst;reflexivity.
-  - destruct i as [i ti],j as [j tj].
-    simpl in H.
-    assert (Hx:curry_totalApp (curry_partialApp (v i) ti) x = curry_totalApp v (tupcat (i,ti) (A := (h::A)) x)).
-    symmetry. apply recomposition with (i := (i,ti)).
-    assert (Hy:curry_totalApp (curry_partialApp (v j) tj) y = curry_totalApp v (tupcat (j,tj) (A := (h::A)) y)).
-    symmetry. apply recomposition with (i := (j,tj)).
-    rewrite Hx,Hy in H.
-    apply Hinj in H.
-    apply tupcat_injective in H.
-    injection H.
-    intros; subst. reflexivity.
+  unfold Injective.
+  intros n x y H.
+  unfold to_view in H.
+  simpl in H.
+  destruct x as [x tx],y as [y ty].
+  apply to_nat_injective in H.
+  destruct tx,ty.
+  rewrite H.
+  reflexivity.
 Qed.
 
+(** reverse *)
 Proposition reverse_preserves_injectivity :
   forall T n, preserve_Injectivity reverse (A := (n::T)).
 Proof.
   intros T n C v Hinj i j x y H.
-  assert (function_injective : (forall x y, reverse (to_view n) x = reverse (to_view n) y -> x = y)). {
-    intros x' y' H'. unfold reverse, to_view in H'. simpl in H'.
+  assert (function_injective : (forall (x y : Idx n), n - 1 - to_nat x = n - 1 - to_nat y -> x = y)). {
+    intros x' y' H'. simpl in H'.
     apply sub_injective in H'.
     apply to_nat_injective in H'.
     inversion H. subst. split; reflexivity.
     destruct n. destruct x' as [nx Hx]. inversion Hx. simpl. rewrite Nat.sub_0_r. apply le_S_n. apply BoundedInt.
     destruct n. destruct y' as [ny Hy]. inversion Hy. simpl. rewrite Nat.sub_0_r. apply le_S_n. apply BoundedInt.
   }
-  set (function := fun (x : Tuple (n::T)) => match x with | (i,tx) => (idx n (reverse (to_view n) i) reverseProof,tx) end).
+  set (function := fun (x : Tuple (n::T)) => match x with | (i,tx) => (idx n (n - 1 - to_nat i) reverseProof,tx) end).
   simpl in H.
   set (fx := function x).
   set (fy := function y).
@@ -268,12 +273,13 @@ Proof.
     subst;reflexivity.
 Qed.
 
+(** take_left *)
 Proposition take_left_preserves_injectivity :
   forall T n b, preserve_Injectivity (take_left b) (A := ((b+n)::T)).
 Proof.
   intros T n b C v Hinj i j x y H.
-  assert (function_injective : (forall x y, (take_left b) (to_view (b+n)) x = (take_left b) (to_view (b+n)) y -> x = y)). {
-    intros x' y' H'. unfold take_left, to_view in H'. simpl in H'.
+  assert (function_injective : (forall (x y : Idx (b)), to_nat x = to_nat y -> x = y)). {
+    intros x' y' H'.
     apply to_nat_injective in H'.
     apply H'.
   }
@@ -309,12 +315,13 @@ Proof.
     subst;reflexivity.
 Qed.
 
+(** take_right *)
 Proposition take_right_preserves_injectivity :
   forall T n a, preserve_Injectivity (take_right a) (A := ((a+n)::T)).
 Proof.
   intros T n a C v Hinj i j x y H.
-  assert (function_injective : (forall x y, (take_right a) (to_view (a+n)) x = (take_right a) (to_view (a+n)) y -> x = y)). {
-    intros x' y' H'. unfold take_right, to_view in H'. simpl in H'.
+  assert (function_injective : (forall (x y : Idx (n-a)), a + to_nat x = a + to_nat y -> x = y)). {
+    intros x' y' H'.
     apply add_injective in H'.
     apply to_nat_injective in H'.
     apply H'.
@@ -351,6 +358,7 @@ Proof.
     subst;reflexivity.
 Qed.
 
+(** transpose *)
 Proposition transpose_preserves_injectivity :
   forall T m n, preserve_Injectivity transpose (A := (m::n::T)).
 Proof.
@@ -390,6 +398,7 @@ Proof.
 Qed.
 
 
+(** group *)
 Proposition group_preserves_injectivity :
   forall T m n, preserve_Injectivity (group m) (A := (m*n::T)).
 Proof.
@@ -436,14 +445,15 @@ Proof.
 Qed.
 
 
+(** map *)
 Proposition map_preserves_injectivity :
   forall A B (n : nat) (f : ViewArray A -> ViewArray B), preserve_Injectivity f -> preserve_Injectivity (map f (n := n)).
 Proof.
   unfold preserve_Injectivity.
   intros A B n f Hf C v Hinj i j x y H.
   assert (function_injective : forall (xi yi : Idx n) (tx ty : (Tuple B)),
-  curry_totalApp (f (curry_partialApp v i xi)) tx = curry_totalApp (f (curry_partialApp v j yi)) ty ->
-    ((xi,i),tx) = ((yi,j),ty)). {
+      curry_totalApp (f (curry_partialApp v i xi)) tx = curry_totalApp (f (curry_partialApp v j yi)) ty ->
+      ((xi,i),tx) = ((yi,j),ty)). {
     intros xi yi tx ty H'.
     assert (Hx:curry_partialApp v i xi = curry_partialApp (reorder v) (A := (n::C)) (xi,i)).
     apply reorder_is_correct.
@@ -460,6 +470,5 @@ Proof.
   apply function_injective in H.
   injection H. intros;subst;split;reflexivity.
 Qed.
-
 
 
