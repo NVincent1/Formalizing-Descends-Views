@@ -20,8 +20,8 @@ Proof.
     destruct n. destruct y as [ny Hy]. inversion Hy. simpl. rewrite Nat.sub_0_r. apply le_S_n. apply BoundedInt.
   }
   reordering_autoProof ('function) (@function) 0.
-  apply H' in H1; subst; reflexivity.
-  apply H' in H3; subst; reflexivity.
+  apply H' in H0; subst; reflexivity.
+  apply H' in H2; subst; reflexivity.
 Qed.
 
 Theorem test_auto_take_left : forall T n b, preserve_Injectivity (take_left b) (A := ((b+n)::T)).
@@ -29,8 +29,8 @@ Proof.
   intros T n b.
   set (function := fun (x : Tuple (b::T)) => match x with | (i,tx) => (idx (b+n) (to_nat i) takeleftProof,tx) end).
   reordering_autoProof ('function) (@function) 0.
-  - apply to_nat_injective in H1. subst. reflexivity.
-  - apply to_nat_injective in H3. subst. reflexivity.
+  - apply to_nat_injective in H0. subst. reflexivity.
+  - apply to_nat_injective in H2. subst. reflexivity.
 Qed.
 
 Theorem test_auto_take_right : forall T n a, preserve_Injectivity (take_right a) (A := ((a+n)::T)).
@@ -38,8 +38,8 @@ Proof.
   intros T n a.
   set (function := fun (x : Tuple (n::T)) => match x with | (i,tx) => (idx (a+n) (a + to_nat i) takerightProof,tx) end).
   reordering_autoProof ('function) (@function) 0.
-  - apply add_injective in H1. apply to_nat_injective in H1. subst. reflexivity.
-  - apply add_injective in H3. apply to_nat_injective in H3. subst. reflexivity.
+  - apply add_injective in H0. apply to_nat_injective in H0. subst. reflexivity.
+  - apply add_injective in H2. apply to_nat_injective in H2. subst. reflexivity.
 Qed.
 
 Theorem test_auto_transpose : forall T n m, preserve_Injectivity transpose (A := (m::n::T)).
@@ -59,6 +59,9 @@ Proof.
     apply BoundedInt. apply BoundedInt.
   }
   reordering_autoProof ('function) (@function) 1.
-  apply H' in H1; inversion H1; subst; reflexivity.
-  apply H' in H3; inversion H3; subst; reflexivity.
+  apply H' in H0; inversion H0; subst; reflexivity.
+  apply H' in H2; inversion H2; subst; reflexivity.
 Qed.
+
+
+
