@@ -49,11 +49,11 @@ Proof.
   apply BoundedInt. apply H.
 Qed.
 
-Definition index_identity {s : nat} {T : List nat} {n : nat} (H : s >= n) (v : ViewArray s [[T;n]]) : ViewArray s [[;n]] :=
-  fun i => idx s (to_nat i) (inf s n i H).
+Definition index_identity {l : nat} {T : List nat} {n : nat} (H : l >= n) (v : ViewArray l [[T;n]]) : ViewArray l [[;n]] :=
+  fun i => idx l (to_nat i) (inf l n i H).
 
 Example index_identity_does_not_preserve_injectivity :
-  (forall s T n (H : s >= n), preserve_Injectivity (index_identity H) (s := s) (A := (n::T))) -> False.
+  (forall l T n (H : l >= n), preserve_Injectivity (index_identity H) (l := l) (A := (n::T))) -> False.
 Proof.
   intros.
   unfold preserve_Injectivity in H.
