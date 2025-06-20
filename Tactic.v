@@ -9,13 +9,12 @@ From Ltac2 Require Import Message.
 From Ltac2 Require Import Control.
 From Ltac2 Require Import Std.
 
-(** TODO : rename variables to decrease the risk of them being already introduced *)
 
 Ltac2 rec introductions () :=
   (* introduces all variables and unfolds the definition *)
   match! goal with
   | [ h:_ |- ?g ] => match! g with
-                    | preserve_Injectivity ?f => unfold preserve_Injectivity; intros set_C view_v H_v_inj index_i index_j index_x index_y Hypthesis
+                    | preserve_Injectivity ?f => unfold preserve_Injectivity; intros set_C view_v H_v_inj index_i index_j index_x index_y Hypothesis1
                     | _ => intro; introductions ()
                     end
   | [ |- _ ] => intro; introductions ()
@@ -59,7 +58,8 @@ Ltac2 applyHinj (f:constr) :=
 end.
 
 
-Ltac2 reordering_autoProof1 (f:constr) (fid:ident) (dim : int):=
+Ltac2 reordering_autoProof1 (dim : int):=
+  (* Introduction and destruction of the variables *)
   introductions ();
   remember_destruction ();
   do dim (destruction ());
@@ -75,12 +75,13 @@ Ltac2 reordering_autoProof1 (f:constr) (fid:ident) (dim : int):=
   ).
 
 
-Ltac2 reordering_autoProof2 (f:constr) (fid:ident) (dim : int):=
+Ltac2 reordering_autoProof2 (f:constr) (fid:ident) :=
+  (* Application of the hypotheses *)
   enter (fun () =>
-    (applyHinj (f));
+    applyHinj f;
     let f' := VarRef (fid) in
-    unfold $f' in Hypthesis;
-    inversion Hypthesis;
+    unfold $f' in Hypothesis1;
+    inversion Hypothesis1;
     subst
   ).
 
@@ -93,26 +94,8 @@ Ltac2 reordering_autoProof (f:constr) (fid:ident) (dim : int):=
   (cf. the examples in `Examples_automation.v`)
   Note : it will only work with simple enough functions (when no case disjunction is needed)
 *)
-  reordering_autoProof1 f fid dim;
-  reordering_autoProof2 f fid dim.
+  reordering_autoProof1 dim;
+  reordering_autoProof2 f fid.
 
-Definition selectProof {n : nat} {m : nat} {i : Idx n} (H : m > 0):
-  m*(to_nat i) < m*n.
-Proof.
-Admitted.
-
-Definition select {T : List nat} {n : nat} (m : nat) (H : m > 0) (v : ViewArray[[T;m*n]]) : ViewArray[[T;n]] :=
-  fun i => v (idx (m*n) (m*(to_nat i)) (selectProof H)).
-
-Proposition test : forall T n m (H : m > 0), preserve_Injectivity (select m H) (A := (m*n::T)).
-Proof.
-  intros T n m H'.
-  set (function := fun (x : Tuple (n::T)) => match x with | (i,tx) => (idx (m*n) (m*(to_nat i)) (selectProof H'),tx) end).
-  reordering_autoProof ('function) (@function) 0.
-  apply Nat.mul_cancel_l in H0. apply to_nat_injective in H0. subst. reflexivity ().
-  intro. subst. inversion H'.
-  apply Nat.mul_cancel_l in H2. apply to_nat_injective in H2. subst. reflexivity ().
-  intro. subst. inversion H'.
-Qed.
 
 
