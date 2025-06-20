@@ -14,7 +14,7 @@ Ltac2 rec introductions () :=
   (* introduces all variables and unfolds the definition *)
   match! goal with
   | [ h:_ |- ?g ] => match! g with
-                    | preserve_Injectivity ?f => unfold preserve_Injectivity; intros set_C view_v H_v_inj index_i index_j index_x index_y Hypothesis1
+                    | preserve_Injectivity ?f => unfold preserve_Injectivity; intros type_C view_v H_v_inj index_i index_j index_x index_y Hypothesis1
                     | _ => intro; introductions ()
                     end
   | [ |- _ ] => intro; introductions ()
@@ -45,7 +45,7 @@ end).
 Ltac2 applyHinj (f:constr) :=
   (* use the injectivity hypothesis *)
    match! goal with
-  | [ h1 : Injective ?v, hx:(?t1 = (?x,?tx)), hy:(?t2 = (?y,?ty)), hi:(?t3 = (?i,?ti)), j:(?t4 = (?j,?tj)), h : nat, c : List nat, v : ViewArray _, h2 : _ |- _] => let h1' := Control.hyp h1 in let h2' := Control.hyp h2 in
+  | [ h1 : Injective ?v, hx:(?t1 = (?x,?tx)), hy:(?t2 = (?y,?ty)), hi:(?t3 = (?i,?ti)), j:(?t4 = (?j,?tj)), h : nat, c : List nat, v : ViewArray _ _, h2 : _ |- _] => let h1' := Control.hyp h1 in let h2' := Control.hyp h2 in
   let h := Control.hyp h in let c := Control.hyp c in
   assert (Hypothesis_equality : curry_totalApp (curry_partialApp $v (A := ($h::$c)) ($i,$ti)) ($f ($x,$tx)) =
           curry_totalApp (curry_partialApp $v (A := ($h::$c)) ($j,$tj)) ($f ($y,$ty))
@@ -93,6 +93,7 @@ Ltac2 reordering_autoProof (f:constr) (fid:ident) (dim : int):=
   - the expected number of dimension (minus one) of the input viewArray
   (cf. the examples in `Examples_automation.v`)
   Note : it will only work with simple enough functions (when no case disjunction is needed)
+  (you can still use `reordering_autoProof1` which automatically introduces and destruct the variables)
 *)
   reordering_autoProof1 dim;
   reordering_autoProof2 f fid.

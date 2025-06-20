@@ -25,6 +25,7 @@ Qed.
 Axiom unif_Idx :
   forall (n : nat) (s : nat) (H1 : n < s) (H2 : n < s), idx _ n H1 = idx _ n H2.
 
+
 Theorem to_nat_injective :
   forall s (i : Idx s) (j : Idx s), to_nat i = to_nat j -> i = j.
 Proof.
@@ -64,10 +65,4 @@ Proof.
   - inversion Hj.
   - rewrite Nat.mul_succ_r. rewrite Nat.add_comm. unfold gt. unfold lt. rewrite <- Nat.add_succ_l. apply Nat.add_le_mono.
   apply Hi. subst. apply Nat.mul_le_mono_l. apply le_S_n in Hj. apply Hj.
-Qed.
-
-Definition modProof {n : nat} {i : Idx n} (H : n <> 0):
-  n > to_nat i mod n.
-Proof.
-  apply Nat.mod_upper_bound with (a := to_nat i) in H. apply H.
 Qed.
