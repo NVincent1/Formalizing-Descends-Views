@@ -90,12 +90,11 @@ Proof.
   - simpl. apply IHn.
 Qed.
 
-Definition transposition {l : nat} {T : List nat} {n : nat} (i : Idx n) (j : Idx n) (v : ViewArray l [[T;n]]) : ViewArray l [[T;n]] :=
+Definition swap {l : nat} {T : List nat} {n : nat} (i : Idx n) (j : Idx n) (v : ViewArray l [[T;n]]) : ViewArray l [[T;n]] :=
   fun i' => if (eqb (to_nat i') (to_nat i)) then v j else if (eqb (to_nat i') (to_nat j)) then v i else v i'.
 
-(* Proof automation does not work when case disjonction is needed *)
-Theorem test_transposition :
-  forall l T n (i j : Idx n), preserve_Injectivity (transposition i j) (l := l) (A := (n::T)).
+Theorem test_swap :
+  forall l T n (i j : Idx n), preserve_Injectivity (swap i j) (l := l) (A := (n::T)).
 Proof.
   intros l T n i j.
   set (function := fun (x : Tuple (n::T)) => match x with | (i',tx) => (if (eqb (to_nat i') (to_nat i)) then j else if (eqb (to_nat i') (to_nat j)) then i else i',tx) end).
@@ -104,7 +103,7 @@ Proof.
   destruct (eqb (to_nat i0) (to_nat j)) eqn:Ex';
   destruct (eqb (to_nat i1) (to_nat i)) eqn:Ey;
   destruct (eqb (to_nat i1) (to_nat j)) eqn:Ey';
-  unfold transposition in *; simpl in Hypothesis1;
+  unfold swap in *; simpl in Hypothesis1;
   try (rewrite Ex in Hypothesis1);
   try (apply eqb_impl_eq in Ex; apply to_nat_injective in Ex);
   try (rewrite Ex' in Hypothesis1);
@@ -114,7 +113,7 @@ Proof.
   try (rewrite Ey' in Hypothesis1);
   try (apply eqb_impl_eq in Ey'; apply to_nat_injective in Ey');
   applyHinj_all();
-  try reflexivity.
+  try reflexivity. (* solve 24 of the 32 cases *)
   rewrite eqb_n_n in Ey';inversion Ey'.
   rewrite eqb_n_n in Ey;inversion Ey.
   rewrite eqb_n_n in Ex';inversion Ex'.
@@ -123,5 +122,15 @@ Proof.
   rewrite eqb_n_n in Ey;inversion Ey.
   rewrite eqb_n_n in Ex';inversion Ex'.
   rewrite eqb_n_n in Ex;inversion Ex.
+Qed.
+
+Theorem test_permutation :
+  forall l T n (f : Idx n -> Idx n), (forall x y, f x = f y -> x = y) -> preserve_Injectivity (fun v i => v (f i)) (l := l) (A := n::T)  (B := (n::T)).
+Proof.
+  intros l T n f Hf.
+  set (function := fun (x : Tuple (n::T)) => match x with | (i,ti) => (f i,ti) end).
+  reordering_autoProof ('function) (@function) 0.
+  apply Hf in H0. subst. reflexivity.
+  apply Hf in H2. subst. reflexivity.
 Qed.
 

@@ -31,18 +31,18 @@ Definition Injective {l : nat} {A : List nat} (v : ViewArray l A) : Prop :=
   forall x y, (curry_totalApp v x) = (curry_totalApp v y) -> x = y.
 
 Proposition curry_partialApp_keeps_injectivity :
-  forall l A B (v : ViewArray l (A++B)), Injective v -> (forall i, Injective (curry_partialApp v i)).
+  forall l A B (v : ViewArray l (A++B)), Injective v -> (forall x, Injective (curry_partialApp v x)).
 Proof.
   intros l A B.
   induction A.
   + simpl. intros. apply H.
-  + intros v Hinj i. simpl. destruct i.
+  + intros v Hinj x. simpl. destruct x as [i t].
       assert (H:Injective (v i)). {
         unfold Injective.
         intros x y H. assert ((i,x) = (i,y)).
         apply Hinj. apply H. injection H0. trivial.
       }
-      apply IHA with (i := t) in H.
+      apply IHA with (x := t) in H.
       apply H.
 Qed.
 
@@ -73,17 +73,17 @@ Proof.
   induction C.
   - simpl in *. exists I,x. split; reflexivity.
   - simpl. destruct x as [x tx].
-  assert (exists (i : Tuple C) (j : Tuple A),
+    assert (exists (i : Tuple C) (j : Tuple A),
         curry_totalApp (v x) tx = curry_totalApp (curry_partialApp (v x) i) j /\ tx = tupcat i j).
-  apply IHC.
-  destruct H as [c H].
-  destruct H as [a H].
-  exists (x,c).
-  exists a.
-  split.
-  apply H.
-  assert (tx = tupcat c a). apply H.
-  subst. reflexivity.
+    apply IHC.
+    destruct H as [c H].
+    destruct H as [a H].
+    exists (x,c).
+    exists a.
+    split.
+    apply H.
+    assert (tx = tupcat c a). apply H.
+    subst. reflexivity.
 Qed.
 
 Lemma recomposition :
@@ -113,8 +113,8 @@ Proof.
     rewrite Hx,Hy in H.
     apply Hinj in H.
     apply tupcat_injective in H.
-    injection H.
-    intros; subst. reflexivity.
+    inversion H.
+    subst. reflexivity.
 Qed.
 
 (* Dimension reordering *)
@@ -156,10 +156,10 @@ Proof.
     /\ (x1,(x2,tx)) = tupcat i j).
     apply decomposition.
     destruct Hx as [ix Hx]. destruct Hx as [jx Hx].
-    simpl in *.
     destruct ix as [ix1 tix].
     destruct tix as [ix2 tix].
     destruct Hx as [Hx Hi].
+    simpl in *.
     rewrite <- reorder_is_correct in Hx.
     rewrite Hx in H.
     assert (Hy:exists (i : Tuple (n::h::C)) (j : Tuple A),
@@ -167,10 +167,10 @@ Proof.
     /\ (y1,(y2,ty)) = tupcat i j).
     apply decomposition.
     destruct Hy as [iy Hy]. destruct Hy as [jy Hy].
-    simpl in *.
     destruct iy as [iy1 tiy].
     destruct tiy as [iy2 tiy].
     destruct Hy as [Hy Hj].
+    simpl in *.
     rewrite <- reorder_is_correct in Hy.
     rewrite Hy in H.
     clear Hx. clear Hy.
@@ -182,11 +182,10 @@ Proof.
     simpl in Hy. rewrite Hy in H.
     rewrite Hi,Hj.
     apply Hinj with (x := (ix2,tupcat tix (ix1,jx) (B := (n::A)))) (y := (iy2,tupcat tiy (iy1,jy) (B := (n::A)))) in H.
-    injection H.
-    intros Hcat Heq.
-    apply tupcat_injective in Hcat.
-    injection Hcat.
-    intros;subst.
+    inversion H.
+    apply tupcat_injective in H2.
+    inversion H2.
+    subst.
     reflexivity.
 Qed.
 
@@ -254,9 +253,6 @@ Proof.
     destruct i,j.
     apply Hinj with (x := fx) (y := fy) in H.
     unfold fx,fy in H.
-    (* Generate goal
-    (idx n (reverse (identity_view n) x) reverseProof, tx) = (idx n (reverse (identity_view n) y) reverseProof, ty)
-    -> x,tx = y,ty *)
     inversion H.
     apply function_injective in H1.
     subst;reflexivity.
@@ -296,9 +292,6 @@ Proof.
     destruct i,j.
     apply Hinj with (x := fx) (y := fy) in H.
     unfold fx,fy in H.
-    (* Generate goal
-    (idx (b + n) (to_nat x) takeleftProof, tx) = (idx (b + n) (to_nat y) takeleftProof, ty)
-    -> x,tx = y,ty *)
     inversion H.
     apply function_injective in H1.
     subst;reflexivity.
@@ -339,9 +332,6 @@ Proof.
     destruct i,j.
     apply Hinj with (x := fx) (y := fy) in H.
     unfold fx,fy in H.
-    (* Generate goal
-    (idx (a + n) (a + to_nat x) takerightProof, tx) = (idx (a + n) (a + to_nat y) takerightProof, ty)
-    -> x,tx = y,ty *)
     inversion H.
     apply function_injective in H1.
     subst;reflexivity.
@@ -366,7 +356,7 @@ Proposition transpose_preserves_injectivity :
 Proof.
   unfold preserve_Injectivity.
   intros l T m n C v Hinj i j x y H.
-  assert (function_injective : True). trivial.
+  assert (function_injective : forall (i1 i2 : Idx m) (j1 j2: Idx n), (j1,i1) = (j2,i2) -> (i1,j1) = (i2,j2)). intros; inversion H0; subst; reflexivity.
   set (function := fun (x : Tuple (n::m::T)) => match x with | (i,(j,tx)) => (j,(i,tx)) end).
   simpl in H.
   set (fx := function x).
@@ -378,9 +368,6 @@ Proof.
     destruct i,j.
     apply Hinj with (x := fx) (y := fy) in H.
     unfold fx,fy in H.
-    (* Generate goal
-    (x2, (x1, tx)) = (y2, (y1, ty))
-    -> x1,x2,tx = y1,y2,ty *)
     inversion H.
     try apply function_injective in H1.
     subst;reflexivity.
@@ -424,9 +411,6 @@ Proof.
     destruct i,j.
     apply Hinj with (x := fx) (y := fy) in H.
     unfold fx,fy in H.
-    (* Generate goal
-    (idx (m * n) (to_nat x2 + m * to_nat x1) groupProof, tx) = (idx (m * n) (to_nat y2 + m * to_nat y1) groupProof, ty)
-    -> (x1,x2,tx) = (y1,y2,ty) *)
     inversion H.
     try apply function_injective in H1; injection H1.
     intros;subst;reflexivity.
