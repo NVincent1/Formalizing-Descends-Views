@@ -57,8 +57,29 @@ Ltac2 applyHinj (f:constr) :=
   apply $h1' with (x := $f ($x,$tx)) (y := $f ($y,$ty)) in $h2
 end.
 
+Ltac2 applyHinj_unfolded () :=
+  (* use the injectivity hypothesis, when the function has been unfolded *)
+   match! goal with
+  | [ h1 : Injective ?v, h : nat, c : List nat, v : ViewArray _ _, h2 : (curry_totalApp (curry_partialApp (?v ?i) ?ti ?x) ?tx =
+              curry_totalApp (curry_partialApp (?v ?j) ?tj ?y) ?ty) |- _] => let h1' := Control.hyp h1 in let h2' := Control.hyp h2 in
+  let h := Control.hyp h in let c := Control.hyp c in subst2 ();
+  assert (Hypothesis_equality : curry_totalApp (curry_partialApp $v (A := ($h::$c)) ($i,$ti)) ($x,$tx) =
+          curry_totalApp (curry_partialApp $v (A := ($h::$c)) ($j,$tj)) ($y,$ty)
+        -> (($i,$ti),($x,$tx)) = (($j,$tj),($y,$ty)));
+  try (apply injectivity_decomposition; apply $h1');
+  apply &Hypothesis_equality in $h2; inversion $h2'; subst
+   | [ h1 : Injective ?v, h2 : (curry_totalApp (?v ?x) ?tx = curry_totalApp (?v ?y) ?ty) |- _ ] => let h1' := Control.hyp h1 in let h2' := Control.hyp h2 in
+  unfold Injective in *; subst2 ();
+  apply $h1' with (x := ($x,$tx)) (y := ($y,$ty)) in $h2; inversion $h2'; subst
+end.
 
-Ltac2 reordering_autoProof1 (dim : int):=
+Ltac2 applyHinj_all () :=
+  (* se the injectivity hypothesis in all goals, when the function has been unfolded *)
+  enter (fun () =>
+    subst2 (); applyHinj_unfolded ()
+  ).
+
+Ltac2 reordering_autoProof1 (dim : int) :=
   (* Introduction and destruction of the variables *)
   introductions ();
   remember_destruction ();
@@ -75,28 +96,29 @@ Ltac2 reordering_autoProof1 (dim : int):=
   ).
 
 
-Ltac2 reordering_autoProof2 (f:constr) (fid:ident) :=
+Ltac2 reordering_autoProof2 (f:constr) (f_id:ident) :=
   (* Application of the hypotheses *)
   enter (fun () =>
     applyHinj f;
-    let f' := VarRef (fid) in
+    let f' := VarRef (f_id) in
     unfold $f' in Hypothesis1;
     inversion Hypothesis1;
     subst
   ).
 
 
-Ltac2 reordering_autoProof (f:constr) (fid:ident) (dim : int):=
+Ltac2 reordering_autoProof (f:constr) (f_id:ident) (dim : int):=
 (* Semi-Automatic proof of correctness for reordering functions :
   takes as inputs :
   - a hint function, the reordering function, given as constr and ident
   - the expected number of dimension (minus one) of the input viewArray
   (cf. the examples in `Examples_automation.v`)
   Note : it will only work with simple enough functions (when no case disjunction is needed)
-  (you can still use `reordering_autoProof1` which automatically introduces and destruct the variables)
+  for more complex functions you will have to use `reordering_autoProof1`
+  as well as `applyHin_all` after disjuncting the cases (cf. the transposition example in `Examples_automation.v`
 *)
   reordering_autoProof1 dim;
-  reordering_autoProof2 f fid.
+  reordering_autoProof2 f f_id.
 
 
 

@@ -45,7 +45,8 @@ Theorem test_auto_transpose : forall l T n m, preserve_Injectivity transpose (l 
 Proof.
   intros l T n m.
   set (function := fun (x : Tuple (n::m::T)) => match x with | (i,(j,tx)) => (j,(i,tx)) end).
-  reordering_autoProof ('function) (@function) 1; reflexivity.
+  reordering_autoProof ('function) (@function) 1;
+  reflexivity.
 Qed.
 
 Theorem test_auto_group : forall l T n m, preserve_Injectivity (group m) (l := l) (A := (m*n::T)).
@@ -57,10 +58,70 @@ Proof.
     apply projection_injective in H. inversion H. apply to_nat_injective in H1. apply to_nat_injective in H2. subst. reflexivity.
     apply BoundedInt. apply BoundedInt.
   }
-  reordering_autoProof ('function) (@function) 1.
-  apply H' in H0; inversion H0; subst; reflexivity.
-  apply H' in H2; inversion H2; subst; reflexivity.
+  reordering_autoProof1 1;
+  unfold group in *; simpl in Hypothesis1;
+  applyHinj_all().
+  apply H' in H1; inversion H1; subst; reflexivity.
+  apply H' in H3; inversion H3; subst; reflexivity.
 Qed.
 
+Fixpoint eqb (m : nat) (n : nat) :=
+  match (m,n) with
+  | (0,0) => true
+  | (S m, S n) => eqb m n
+  | (_,_) => false
+end.
 
+Lemma eqb_impl_eq :
+  forall m n,
+  eqb m n = true -> m = n.
+Proof.
+  induction m.
+  - destruct n. intro. reflexivity. intro. inversion H.
+  - destruct n. intro. inversion H. simpl. intro. apply IHm in H. rewrite H. reflexivity.
+Qed.
+
+Lemma eqb_n_n :
+  forall n,
+  eqb n n = true.
+Proof.
+  induction n.
+  - reflexivity.
+  - simpl. apply IHn.
+Qed.
+
+Definition transposition {l : nat} {T : List nat} {n : nat} (i : Idx n) (j : Idx n) (v : ViewArray l [[T;n]]) : ViewArray l [[T;n]] :=
+  fun i' => if (eqb (to_nat i') (to_nat i)) then v j else if (eqb (to_nat i') (to_nat j)) then v i else v i'.
+
+(* Proof automation does not work when case disjonction is needed *)
+Theorem test_transposition :
+  forall l T n (i j : Idx n), preserve_Injectivity (transposition i j) (l := l) (A := (n::T)).
+Proof.
+  intros l T n i j.
+  set (function := fun (x : Tuple (n::T)) => match x with | (i',tx) => (if (eqb (to_nat i') (to_nat i)) then j else if (eqb (to_nat i') (to_nat j)) then i else i',tx) end).
+  reordering_autoProof1 0;
+  destruct (eqb (to_nat i0) (to_nat i)) eqn:Ex;
+  destruct (eqb (to_nat i0) (to_nat j)) eqn:Ex';
+  destruct (eqb (to_nat i1) (to_nat i)) eqn:Ey;
+  destruct (eqb (to_nat i1) (to_nat j)) eqn:Ey';
+  unfold transposition in *; simpl in Hypothesis1;
+  try (rewrite Ex in Hypothesis1);
+  try (apply eqb_impl_eq in Ex; apply to_nat_injective in Ex);
+  try (rewrite Ex' in Hypothesis1);
+  try (apply eqb_impl_eq in Ex'; apply to_nat_injective in Ex');
+  try (rewrite Ey in Hypothesis1);
+  try (apply eqb_impl_eq in Ey; apply to_nat_injective in Ey);
+  try (rewrite Ey' in Hypothesis1);
+  try (apply eqb_impl_eq in Ey'; apply to_nat_injective in Ey');
+  applyHinj_all();
+  try reflexivity.
+  rewrite eqb_n_n in Ey';inversion Ey'.
+  rewrite eqb_n_n in Ey;inversion Ey.
+  rewrite eqb_n_n in Ex';inversion Ex'.
+  rewrite eqb_n_n in Ex;inversion Ex.
+  rewrite eqb_n_n in Ey';inversion Ey'.
+  rewrite eqb_n_n in Ey;inversion Ey.
+  rewrite eqb_n_n in Ex';inversion Ex'.
+  rewrite eqb_n_n in Ex;inversion Ex.
+Qed.
 
