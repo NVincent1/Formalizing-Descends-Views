@@ -64,6 +64,7 @@ Proof.
   injection H. intros Htupcat Hx. apply IHA in Htupcat. inversion Htupcat. subst. reflexivity.
 Qed.
 
+(* v (x,y) = (v x) y *)
 Lemma decomposition :
   forall C A (v : ViewArray (C++A)) (x : Tuple (C++A)),
   exists (i : Tuple C) (j : Tuple A),
@@ -86,6 +87,7 @@ Proof.
     subst. reflexivity.
 Qed.
 
+(* (v x) y = v (x,y) *)
 Lemma recomposition :
   forall C A (v : ViewArray (C++A)) (i : Tuple C) (j : Tuple A),
   curry_totalApp v (tupcat i j) = curry_totalApp (curry_partialApp v i) j.
@@ -97,6 +99,7 @@ Proof.
 Qed.
 
 
+(* v injective -> (fun (x,y) => v (x,y) is injective) *)
 Lemma injectivity_decomposition :
   forall A B (v : ViewArray (A++B)),
   Injective v -> (forall (i j : Tuple A) (x y : Tuple B), (curry_totalApp (curry_partialApp v i) x) = (curry_totalApp (curry_partialApp v j) y)-> (i,x) = (j,y)).

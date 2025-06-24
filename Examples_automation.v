@@ -7,6 +7,10 @@ From Ltac2 Require Import Ltac2.
 From Views Require Import Tactic.
 Require Import PeanoNat.
 
+(** Proofs that are in `ViewsProof.v` using the automated tactics from `Tactic.v`.
+Does not contain the proof of `map` preserving injectivity as it is not easily automatable 
+following a similar pattern as the others *)
+
 Theorem reverse_preserves_injectivity_auto_proof : forall T n, preserve_Injectivity reverse (A := (n::T)).
 Proof.
   intros T n.
