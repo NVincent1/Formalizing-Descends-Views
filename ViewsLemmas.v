@@ -14,26 +14,26 @@ end.
 Notation "A ++ B" := (cat A B).
 
 (* Application viewed with curryfication *)
-Fixpoint curry_partialApp  {l : nat} {A : List nat} {B : List nat} : ViewArray l (A++B) -> Tuple A -> ViewArray l B :=
+Fixpoint curry_partialApp  {A : List nat} {B : List nat} : ViewArray (A++B) -> Tuple A -> ViewArray B :=
   match A with
-  | [] => fun (v : ViewArray l ([]++B)) (x : Tuple []) => v
-  | A => fun (v : ViewArray l (A++B)) (x : Tuple A) => match x with | (x,y) => curry_partialApp (v x) y end
+  | [] => fun (v : ViewArray ([]++B)) (x : Tuple []) => v
+  | A => fun (v : ViewArray (A++B)) (x : Tuple A) => match x with | (x,y) => curry_partialApp (v x) y end
 end.
 
-Fixpoint curry_totalApp {l : nat} {A : List nat} : ViewArray l A -> Tuple A -> Idx l :=
+Fixpoint curry_totalApp {A : List nat} : ViewArray A -> Tuple A -> nat :=
   match A with
-  | [] => fun (v : ViewArray l []) (x : Tuple []) => v
-  | A => fun (v : ViewArray l A) (x : Tuple A) => match x with | (x,y) => curry_totalApp (v x) y end
+  | [] => fun (v : ViewArray []) (x : Tuple []) => v
+  | A => fun (v : ViewArray A) (x : Tuple A) => match x with | (x,y) => curry_totalApp (v x) y end
 end.
 
 (* v is injective if it does not contain twice the same index of the underlying array *)
-Definition Injective {l : nat} {A : List nat} (v : ViewArray l A) : Prop :=
+Definition Injective {A : List nat} (v : ViewArray A) : Prop :=
   forall x y, (curry_totalApp v x) = (curry_totalApp v y) -> x = y.
 
 Proposition curry_partialApp_keeps_injectivity :
-  forall l A B (v : ViewArray l (A++B)), Injective v -> (forall x, Injective (curry_partialApp v x)).
+  forall A B (v : ViewArray (A++B)), Injective v -> (forall x, Injective (curry_partialApp v x)).
 Proof.
-  intros l A B.
+  intros A B.
   induction A.
   + simpl. intros. apply H.
   + intros v Hinj x. simpl. destruct x as [i t].
@@ -65,7 +65,7 @@ Proof.
 Qed.
 
 Lemma decomposition :
-  forall l C A (v : ViewArray l (C++A)) (x : Tuple (C++A)),
+  forall C A (v : ViewArray (C++A)) (x : Tuple (C++A)),
   exists (i : Tuple C) (j : Tuple A),
   curry_totalApp v x = curry_totalApp (curry_partialApp v i) j /\ x = (tupcat i j).
 Proof.
@@ -87,7 +87,7 @@ Proof.
 Qed.
 
 Lemma recomposition :
-  forall l C A (v : ViewArray l (C++A)) (i : Tuple C) (j : Tuple A),
+  forall C A (v : ViewArray (C++A)) (i : Tuple C) (j : Tuple A),
   curry_totalApp v (tupcat i j) = curry_totalApp (curry_partialApp v i) j.
 Proof.
   induction C.
@@ -98,10 +98,10 @@ Qed.
 
 
 Lemma injectivity_decomposition :
-  forall l A B (v : ViewArray l (A++B)),
+  forall A B (v : ViewArray (A++B)),
   Injective v -> (forall (i j : Tuple A) (x y : Tuple B), (curry_totalApp (curry_partialApp v i) x) = (curry_totalApp (curry_partialApp v j) y)-> (i,x) = (j,y)).
 Proof.
-  intros l A B v Hinj i j x y H.
+  intros A B v Hinj i j x y H.
   destruct A.
   - destruct i,j. simpl in H. apply Hinj in H. subst;reflexivity.
   - destruct i as [i ti],j as [j tj].
@@ -118,14 +118,14 @@ Proof.
 Qed.
 
 (* Dimension reordering *)
-Fixpoint reorder {l : nat} {C : List nat} {n : nat} {A : List nat}  : ViewArray l (C++[[A;n]]) ->  ViewArray l [[C++A;n]] :=
+Fixpoint reorder {C : List nat} {n : nat} {A : List nat}  : ViewArray (C++[[A;n]]) ->  ViewArray [[C++A;n]] :=
   match C with
-  | [] => fun (v : ViewArray l ([]++[[A;n]])) x => v x
-  | C => fun (v : ViewArray l (C++[[A;n]])) x => fun i => reorder (v i) x
+  | [] => fun (v : ViewArray ([]++[[A;n]])) x => v x
+  | C => fun (v : ViewArray (C++[[A;n]])) x => fun i => reorder (v i) x
 end.
 
 Lemma reorder_is_correct :
-  forall l C A (n : nat) (v : ViewArray l (C++(n::A))) (i : Tuple C) (x : Idx n),
+  forall C A (n : nat) (v : ViewArray (C++(n::A))) (i : Tuple C) (x : Idx n),
   curry_partialApp v i x = curry_partialApp (reorder v x) i.
 Proof.
   intros.
@@ -138,10 +138,10 @@ Proof.
 Qed.
 
 Proposition reorder_keeps_injectivity :
-  forall l C A (n : nat) (v : ViewArray l (C++(n::A))),
+  forall C A (n : nat) (v : ViewArray (C++(n::A))),
   Injective v -> Injective (reorder v).
 Proof.
-  intros l C A.
+  intros C A.
   destruct C.
   - intros n v Hinj. simpl in *. unfold Injective in *.
     intros x y H. simpl in *.
@@ -188,7 +188,3 @@ Proof.
     subst.
     reflexivity.
 Qed.
-
-From Views Require Import Lemmas.
-From Views Require Import BoundedInt.
-From Views Require Import ViewFunctions.

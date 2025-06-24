@@ -2,6 +2,7 @@
 From Views Require Import Lemmas.
 From Views Require Import BoundedInt.
 From Views Require Import ViewFunctions.
+From Views Require Import ViewsLemmas.
 From Views Require Import ViewsProof.
 Require Import PeanoNat.
 From Ltac2 Require Import Ltac2.
@@ -45,7 +46,7 @@ end).
 Ltac2 applyHinj (f:constr) :=
   (* use the injectivity hypothesis *)
    match! goal with
-  | [ h1 : Injective ?v, hx:(?t1 = (?x,?tx)), hy:(?t2 = (?y,?ty)), hi:(?t3 = (?i,?ti)), j:(?t4 = (?j,?tj)), h : nat, c : List nat, v : ViewArray _ _, h2 : _ |- _] => let h1' := Control.hyp h1 in let h2' := Control.hyp h2 in
+  | [ h1 : Injective ?v, hx:(?t1 = (?x,?tx)), hy:(?t2 = (?y,?ty)), hi:(?t3 = (?i,?ti)), j:(?t4 = (?j,?tj)), h : nat, c : List nat, v : ViewArray _, h2 : _ |- _] => let h1' := Control.hyp h1 in let h2' := Control.hyp h2 in
   let h := Control.hyp h in let c := Control.hyp c in
   assert (Hypothesis_equality : curry_totalApp (curry_partialApp $v (A := ($h::$c)) ($i,$ti)) ($f ($x,$tx)) =
           curry_totalApp (curry_partialApp $v (A := ($h::$c)) ($j,$tj)) ($f ($y,$ty))
@@ -60,7 +61,7 @@ end.
 Ltac2 applyHinj_unfolded () :=
   (* use the injectivity hypothesis, when the function has been unfolded *)
    match! goal with
-  | [ h1 : Injective ?v, h : nat, c : List nat, v : ViewArray _ _, h2 : (curry_totalApp (curry_partialApp (?v ?i) ?ti ?x) ?tx =
+  | [ h1 : Injective ?v, h : nat, c : List nat, v : ViewArray _, h2 : (curry_totalApp (curry_partialApp (?v ?i) ?ti ?x) ?tx =
               curry_totalApp (curry_partialApp (?v ?j) ?tj ?y) ?ty) |- _] => let h1' := Control.hyp h1 in let h2' := Control.hyp h2 in
   let h := Control.hyp h in let c := Control.hyp c in subst2 ();
   assert (Hypothesis_equality : curry_totalApp (curry_partialApp $v (A := ($h::$c)) ($i,$ti)) ($x,$tx) =

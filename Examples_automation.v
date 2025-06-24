@@ -7,9 +7,9 @@ From Ltac2 Require Import Ltac2.
 From Views Require Import Tactic.
 Require Import PeanoNat.
 
-Theorem test_auto_reverse : forall l T n, preserve_Injectivity reverse (l := l) (A := (n::T)).
+Theorem reverse_preserves_injectivity_auto_proof : forall T n, preserve_Injectivity reverse (A := (n::T)).
 Proof.
-  intros l T n.
+  intros T n.
   set (function := fun (x : Tuple (n::T)) => match x with | (i,tx) => (idx n (n - 1 - to_nat i) reverseProof,tx) end).
   assert (H':forall (x y : Idx n), n - 1 - to_nat x = n - 1 - to_nat y -> x = y). {
     intros.
@@ -23,35 +23,35 @@ Proof.
   apply H' in H2; subst; reflexivity.
 Qed.
 
-Theorem test_auto_take_left : forall l T n b, preserve_Injectivity (take_left b) (l := l) (A := ((b+n)::T)).
+Theorem take_left_preserves_injectivity_auto_proof : forall T n b, preserve_Injectivity (take_left b) (A := ((b+n)::T)).
 Proof.
-  intros l T n b.
+  intros T n b.
   set (function := fun (x : Tuple (b::T)) => match x with | (i,tx) => (idx (b+n) (to_nat i) takeleftProof,tx) end).
   reordering_autoProof ('function) (@function) 0.
   - apply to_nat_injective in H0. subst. reflexivity.
   - apply to_nat_injective in H2. subst. reflexivity.
 Qed.
 
-Theorem test_auto_take_right : forall l T n a, preserve_Injectivity (take_right a) (l := l) (A := ((a+n)::T)).
+Theorem take_right_preserves_injectivity_auto_proof : forall T n a, preserve_Injectivity (take_right a) (A := ((a+n)::T)).
 Proof.
-  intros l T n a.
+  intros T n a.
   set (function := fun (x : Tuple (n::T)) => match x with | (i,tx) => (idx (a+n) (a + to_nat i) takerightProof,tx) end).
   reordering_autoProof ('function) (@function) 0.
   - apply add_injective in H0. apply to_nat_injective in H0. subst. reflexivity.
   - apply add_injective in H2. apply to_nat_injective in H2. subst. reflexivity.
 Qed.
 
-Theorem test_auto_transpose : forall l T n m, preserve_Injectivity transpose (l := l) (A := (m::n::T)).
+Theorem transpose_preserves_injectivity_auto_proof : forall T n m, preserve_Injectivity transpose (A := (m::n::T)).
 Proof.
-  intros l T n m.
+  intros T n m.
   set (function := fun (x : Tuple (n::m::T)) => match x with | (i,(j,tx)) => (j,(i,tx)) end).
   reordering_autoProof ('function) (@function) 1;
   reflexivity.
 Qed.
 
-Theorem test_auto_group : forall l T n m, preserve_Injectivity (group m) (l := l) (A := (m*n::T)).
+Theorem group_preserves_injectivity_auto_proof : forall T n m, preserve_Injectivity (group m) (A := (m*n::T)).
 Proof.
-  intros l T n m.
+  intros T n m.
   set (function := fun (x : Tuple (n::m::T)) => match x with | (i,(j,tx)) => (idx (m*n) (to_nat j + m*(to_nat i)) groupProof,tx) end).
   assert (H':forall (x1 y1 : Idx m) (x2 y2 : Idx n), to_nat x1 + m * to_nat x2 = to_nat y1 + m * to_nat y2 -> (x1,x2) = (y1,y2)). {
     intros.
@@ -90,13 +90,13 @@ Proof.
   - simpl. apply IHn.
 Qed.
 
-Definition swap {l : nat} {T : List nat} {n : nat} (i : Idx n) (j : Idx n) (v : ViewArray l [[T;n]]) : ViewArray l [[T;n]] :=
+Definition swap {T : List nat} {n : nat} (i : Idx n) (j : Idx n) (v : ViewArray [[T;n]]) : ViewArray [[T;n]] :=
   fun i' => if (eqb (to_nat i') (to_nat i)) then v j else if (eqb (to_nat i') (to_nat j)) then v i else v i'.
 
 Theorem test_auto_swap :
-  forall l T n (i j : Idx n), preserve_Injectivity (swap i j) (l := l) (A := (n::T)).
+  forall T n (i j : Idx n), preserve_Injectivity (swap i j) (A := (n::T)).
 Proof.
-  intros l T n i j.
+  intros T n i j.
   set (function := fun (x : Tuple (n::T)) => match x with | (i',tx) => (if (eqb (to_nat i') (to_nat i)) then j else if (eqb (to_nat i') (to_nat j)) then i else i',tx) end).
   reordering_autoProof1 0;
   destruct (eqb (to_nat i0) (to_nat i)) eqn:Ex;
@@ -124,9 +124,9 @@ Proof.
 Qed.
 
 Theorem test_auto_permutation :
-  forall l T n (f : Idx n -> Idx n), (forall x y, f x = f y -> x = y) -> preserve_Injectivity (fun v i => v (f i)) (l := l) (A := n::T)  (B := (n::T)).
+  forall T n (f : Idx n -> Idx n), (forall x y, f x = f y -> x = y) -> preserve_Injectivity (fun v i => v (f i)) (A := n::T)  (B := (n::T)).
 Proof.
-  intros l T n f Hf.
+  intros T n f Hf.
   set (function := fun (x : Tuple (n::T)) => match x with | (i,ti) => (f i,ti) end).
   reordering_autoProof ('function) (@function) 0.
   apply Hf in H0. subst. reflexivity.
