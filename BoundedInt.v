@@ -22,6 +22,7 @@ Proof.
   unfold to_nat. destruct i. apply H.
 Qed.
 
+(* Equality between two bounded integers of the same value, but with different proofs (reflexivity fails) *)
 Axiom unif_Idx :
   forall (n : nat) (s : nat) (H1 : n < s) (H2 : n < s), idx s n H1 = idx s n H2.
 
@@ -33,6 +34,7 @@ Proof.
 Qed.
 
 
+(** Proofs needed for the definition of the functions in `ViewFunctions.v` *)
 
 Definition reverseProof {l : nat} {i : Idx l} :
   l > l - 1 - to_nat i.
@@ -53,6 +55,19 @@ Definition takerightProof {a : nat} {n : nat} {i : Idx n} :
 Proof.
   apply Nat.add_lt_mono_l.
   apply BoundedInt.
+Qed.
+
+Definition selectrangeProof {a : nat} {b : nat} {n : nat} {i : Idx (b-a)} :
+  a + to_nat i < b + n.
+Proof.
+  destruct i.
+  simpl.
+  destruct (b-a) eqn:E.
+  - inversion H.
+  - assert (S n1 <> 0). intro. inversion H0.
+    apply Nat.add_sub_eq_nz with (m := a) (n := b) in H0.
+    assert (a + n0 < a + S n1). apply Nat.add_lt_mono_l. apply H.
+    rewrite H0 in H1. apply Nat.le_trans with (m := b). apply H1. apply Nat.le_add_r. apply E.
 Qed.
 
 Definition groupProof {m : nat} {n : nat} {i : Idx m} {j : Idx n} :

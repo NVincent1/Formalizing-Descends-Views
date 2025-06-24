@@ -10,6 +10,7 @@ From Ltac2 Require Import Message.
 From Ltac2 Require Import Control.
 From Ltac2 Require Import Std.
 
+(** Importing LTac2 is needed in order to use the tactics provided in this file *)
 
 Ltac2 rec introductions () :=
   (* introduces all variables and unfolds the definition *)

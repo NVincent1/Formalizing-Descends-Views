@@ -36,6 +36,15 @@ Proof.
   - apply to_nat_injective in H2. subst. reflexivity.
 Qed.
 
+Theorem select_range_preserves_injectivity_auto_proof : forall T n a b, preserve_Injectivity (select_range a b) (A := ((b+n)::T)).
+Proof.
+  intros T n a b.
+  set (function := fun (x : Tuple ((b-a)::T)) => match x with | (i,tx) => (idx (b+n) (a + to_nat i) selectrangeProof,tx) end).
+  reordering_autoProof ('function) (@function) 0.
+  - apply add_injective in H0. apply to_nat_injective in H0. subst. reflexivity.
+  - apply add_injective in H2. apply to_nat_injective in H2. subst. reflexivity.
+Qed.
+
 Theorem take_right_preserves_injectivity_auto_proof : forall T n a, preserve_Injectivity (take_right a) (A := ((a+n)::T)).
 Proof.
   intros T n a.
