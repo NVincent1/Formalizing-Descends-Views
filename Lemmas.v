@@ -36,8 +36,6 @@ Proof.
       reflexivity. apply H4. apply sub_S in H1. apply H1.
 Qed.
 
-
-
 Definition add_injective := Nat.add_cancel_l.
 
 Lemma eq_mod :

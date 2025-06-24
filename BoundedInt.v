@@ -23,7 +23,7 @@ Proof.
 Qed.
 
 Axiom unif_Idx :
-  forall (n : nat) (s : nat) (H1 : n < s) (H2 : n < s), idx _ n H1 = idx _ n H2.
+  forall (n : nat) (s : nat) (H1 : n < s) (H2 : n < s), idx s n H1 = idx s n H2.
 
 Theorem to_nat_injective :
   forall s (i : Idx s) (j : Idx s), to_nat i = to_nat j -> i = j.

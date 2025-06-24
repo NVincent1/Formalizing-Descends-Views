@@ -93,7 +93,7 @@ Qed.
 Definition swap {l : nat} {T : List nat} {n : nat} (i : Idx n) (j : Idx n) (v : ViewArray l [[T;n]]) : ViewArray l [[T;n]] :=
   fun i' => if (eqb (to_nat i') (to_nat i)) then v j else if (eqb (to_nat i') (to_nat j)) then v i else v i'.
 
-Theorem test_swap :
+Theorem test_auto_swap :
   forall l T n (i j : Idx n), preserve_Injectivity (swap i j) (l := l) (A := (n::T)).
 Proof.
   intros l T n i j.
@@ -112,8 +112,7 @@ Proof.
   try (apply eqb_impl_eq in Ey; apply to_nat_injective in Ey);
   try (rewrite Ey' in Hypothesis1);
   try (apply eqb_impl_eq in Ey'; apply to_nat_injective in Ey');
-  applyHinj_all();
-  try reflexivity. (* solve 24 of the 32 cases *)
+  applyHinj_all(); try reflexivity. (* solve 24 of the 32 cases *)
   rewrite eqb_n_n in Ey';inversion Ey'.
   rewrite eqb_n_n in Ey;inversion Ey.
   rewrite eqb_n_n in Ex';inversion Ex'.
@@ -124,7 +123,7 @@ Proof.
   rewrite eqb_n_n in Ex;inversion Ex.
 Qed.
 
-Theorem test_permutation :
+Theorem test_auto_permutation :
   forall l T n (f : Idx n -> Idx n), (forall x y, f x = f y -> x = y) -> preserve_Injectivity (fun v i => v (f i)) (l := l) (A := n::T)  (B := (n::T)).
 Proof.
   intros l T n f Hf.
