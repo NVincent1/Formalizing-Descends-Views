@@ -47,6 +47,7 @@ Definition select_range {T : List nat} {n : nat} (a : nat) (b : nat) (v : ViewAr
 Definition transpose {T : List nat} {n : nat} {m : nat} (v : ViewArray [[ [[T;m]];n ]]) : ViewArray [[ [[T;n]];m ]] :=
   fun i j => v j i.
 
+(* m is the size of the groups *)
 Definition group {T : List nat} {n : nat} (m : nat) (v : ViewArray [[T;m*n]]) : ViewArray [[ [[T;m]];n]] :=
   fun i j => v (idx (m*n) (to_nat j + m*(to_nat i)) groupProof).
 
