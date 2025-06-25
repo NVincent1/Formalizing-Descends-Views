@@ -165,6 +165,46 @@ Proof.
     subst;reflexivity.
 Qed.
 
+(** select_range *)
+Proposition select_range_preserves_injectivity :
+  forall T n a b, preserve_Injectivity (select_range a b) (A := ((b+n)::T)).
+Proof.
+  intros T n a b C v Hinj i j x y H.
+  assert (function_injective : (forall (x y : Idx (b-a)), a + to_nat x = a + to_nat y -> x = y)). {
+    intros x' y' H'.
+    apply add_injective in H'.
+    apply to_nat_injective in H'.
+    apply H'.
+  }
+  set (function := fun (x : Tuple ((b-a)::T)) => match x with | (i,tx) => (idx (b+n) (a+to_nat i) selectrangeProof,tx) end).
+  simpl in H.
+  set (fx := function x).
+  set (fy := function y).
+  destruct x as [x tx],y as [y ty].
+  intros. unfold identity_view in function_injective,fx,fy; simpl in function_injective,fx,fy.
+  destruct C.
+  - simpl in *. unfold Injective in Hinj.
+    destruct i,j.
+    apply Hinj with (x := fx) (y := fy) in H.
+    unfold fx,fy in H.
+    inversion H.
+    apply function_injective in H1.
+    subst;reflexivity.
+  - destruct i as [i ti],j as [j tj].
+    set (i' := (i,ti)) in *.
+    set (x' := fx) in *.
+    set (j' := (j,tj)) in *.
+    set (y' := fy) in *.
+    assert (Heq : (curry_totalApp (curry_partialApp v i') x') = (curry_totalApp (curry_partialApp v j') y')-> (i',x') = (j',y')).
+    apply injectivity_decomposition. apply Hinj.
+    simpl in *.
+    apply Heq in H.
+    unfold i',j',x',y' in *.
+    inversion H.
+    apply function_injective in H3.
+    subst;reflexivity.
+Qed.
+
 (** transpose *)
 Proposition transpose_preserves_injectivity :
   forall T m n, preserve_Injectivity transpose (A := (m::n::T)).
