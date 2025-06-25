@@ -75,13 +75,13 @@ Ltac2 applyHinj_unfolded () :=
   apply $h1' with (x := ($x,$tx)) (y := ($y,$ty)) in $h2; inversion $h2'; subst
 end.
 
-Ltac2 applyHinj_all () :=
+Ltac2 auto_apply () :=
   (* se the injectivity hypothesis in all goals, when the function has been unfolded *)
   enter (fun () =>
     subst2 (); applyHinj_unfolded ()
   ).
 
-Ltac2 reordering_autoProof1 (dim : int) :=
+Ltac2 auto_destruct (dim : int) :=
   (* Introduction and destruction of the variables *)
   introductions ();
   remember_destruction ();
@@ -115,11 +115,11 @@ Ltac2 reordering_autoProof (f:constr) (f_id:ident) (dim : int):=
   - a hint function, the reordering function, given as constr and ident
   - the expected number of dimension (minus one) of the input viewArray
   (cf. the examples in `Examples_automation.v`)
-  Note : it will only work with simple enough functions (when no case disjunction is needed)
-  for more complex functions you will have to use `reordering_autoProof1`
-  as well as `applyHin_all` after disjuncting the cases (cf. the transposition example in `Examples_automation.v`
+  Note : it will only work with simple enough functions (e.g. when no case disjunction is needed)
+  for more complex functions you will have to use `auto_destruct`
+  as well as `auto_apply` after disjuncting the cases (cf. the transposition example in `Examples_automation.v`
 *)
-  reordering_autoProof1 dim;
+  auto_destruct dim;
   reordering_autoProof2 f f_id.
 
 

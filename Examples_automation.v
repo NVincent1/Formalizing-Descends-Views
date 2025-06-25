@@ -73,11 +73,9 @@ Proof.
     apply projection_injective in H. inversion H. apply to_nat_injective in H1. apply to_nat_injective in H2. subst. reflexivity.
     apply BoundedInt. apply BoundedInt.
   }
-  reordering_autoProof1 1;
-  unfold group in *; simpl in Hypothesis1;
-  applyHinj_all().
-  apply H' in H1; inversion H1; subst; reflexivity.
-  apply H' in H3; inversion H3; subst; reflexivity.
+  reordering_autoProof ('function) (@function) 1.
+  apply H' in H0; inversion H0; subst; reflexivity.
+  apply H' in H2; inversion H2; subst; reflexivity.
 Qed.
 
 Fixpoint eqb (m : nat) (n : nat) :=
@@ -113,7 +111,7 @@ Theorem test_auto_swap :
 Proof.
   intros T n i j.
   set (function := fun (x : Tuple (n::T)) => match x with | (i',tx) => (if (eqb (to_nat i') (to_nat i)) then j else if (eqb (to_nat i') (to_nat j)) then i else i',tx) end).
-  reordering_autoProof1 0;
+  auto_destruct 0;
   (* destruct equalities *)
   destruct (eqb (to_nat i0) (to_nat i)) eqn:Ex;
   destruct (eqb (to_nat i0) (to_nat j)) eqn:Ex';
@@ -129,7 +127,7 @@ Proof.
   try (apply eqb_impl_eq in Ey; apply to_nat_injective in Ey);
   try (rewrite Ey' in Hypothesis1);
   try (apply eqb_impl_eq in Ey'; apply to_nat_injective in Ey');
-  applyHinj_all(); try reflexivity. (* solve 24 of the 32 cases *)
+  auto_apply(); try reflexivity. (* solve 24 of the 32 cases *)
   (* manually handling the absurd cases *)
   rewrite eqb_n_n in Ey';inversion Ey'.
   rewrite eqb_n_n in Ey;inversion Ey.
