@@ -112,6 +112,7 @@ Proof.
   exfalso. inversion Hx. inversion H0. inversion H2.
 Qed.
 
+(* Example of a fonction that returns an injective array, which does not verify the property we want to have for views *)
 Definition index_identity {T : List nat} {n : nat} (v : ViewArray [[T;n]]) : ViewArray [[;n]] :=
   fun i => to_nat i.
 
