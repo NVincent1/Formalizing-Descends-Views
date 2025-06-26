@@ -110,7 +110,9 @@ Theorem test_auto_swap :
   forall T n (i j : Idx n), preserve_Injectivity (swap i j) (A := (n::T)).
 Proof.
   intros T n i j.
-  set (function := fun (x : Tuple (n::T)) => match x with | (i',tx) => (if (eqb (to_nat i') (to_nat i)) then j else if (eqb (to_nat i') (to_nat j)) then i else i',tx) end).
+  set (function := fun (x : Tuple (n::T)) =>
+                   match x with | (i',tx) =>
+                   (if (eqb (to_nat i') (to_nat i)) then j else if (eqb (to_nat i') (to_nat j)) then i else i',tx) end).
   auto_destruct 0;
   (* destruct equalities *)
   destruct (eqb (to_nat i0) (to_nat i)) eqn:Ex;
@@ -140,7 +142,8 @@ Proof.
 Qed.
 
 Theorem test_auto_permutation :
-  forall T n (f : Idx n -> Idx n), (forall x y, f x = f y -> x = y) -> preserve_Injectivity (fun v i => v (f i)) (A := n::T)  (B := (n::T)).
+  forall T n (f : Idx n -> Idx n),
+  (forall x y, f x = f y -> x = y) -> preserve_Injectivity (fun v i => v (f i)) (A := n::T)  (B := (n::T)).
 Proof.
   intros T n f Hf.
   set (function := fun (x : Tuple (n::T)) => match x with | (i,ti) => (f i,ti) end).

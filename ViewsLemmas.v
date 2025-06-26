@@ -102,7 +102,8 @@ Qed.
 (* v injective -> (fun (x,y) => v (x,y) is injective) *)
 Lemma injectivity_decomposition :
   forall A B (v : ViewArray (A++B)),
-  Injective v -> (forall (i j : Tuple A) (x y : Tuple B), (curry_totalApp (curry_partialApp v i) x) = (curry_totalApp (curry_partialApp v j) y)-> (i,x) = (j,y)).
+  Injective v -> (forall (i j : Tuple A) (x y : Tuple B), (curry_totalApp (curry_partialApp v i) x)
+                  = (curry_totalApp (curry_partialApp v j) y)-> (i,x) = (j,y)).
 Proof.
   intros A B v Hinj i j x y H.
   destruct A.
@@ -177,10 +178,12 @@ Proof.
     rewrite <- reorder_is_correct in Hy.
     rewrite Hy in H.
     clear Hx. clear Hy.
-    assert (Hx:curry_totalApp (curry_partialApp v (A := (h::C)) (ix2,tix)) (ix1,jx) = curry_totalApp v (A := ((h::C)++(n::A))) (tupcat (ix2,tix) (A:=(h::C)) (ix1,jx) (B:=(n::A)))).
+    assert (Hx:curry_totalApp (curry_partialApp v (A := (h::C)) (ix2,tix)) (ix1,jx)
+            = curry_totalApp v (A := ((h::C)++(n::A))) (tupcat (ix2,tix) (A:=(h::C)) (ix1,jx) (B:=(n::A)))).
     symmetry. apply recomposition with (i := (ix2,tix)) (j := (ix1,jx)).
     simpl in Hx. rewrite Hx in H.
-    assert (Hy:curry_totalApp (curry_partialApp v (A := (h::C)) (iy2,tiy)) (iy1,jy) = curry_totalApp v (A := ((h::C)++(n::A))) (tupcat (iy2,tiy) (A:=(h::C)) (iy1,jy) (B:=(n::A)))).
+    assert (Hy:curry_totalApp (curry_partialApp v (A := (h::C)) (iy2,tiy)) (iy1,jy) =
+            curry_totalApp v (A := ((h::C)++(n::A))) (tupcat (iy2,tiy) (A:=(h::C)) (iy1,jy) (B:=(n::A)))).
     symmetry. apply recomposition with (i := (iy2,tiy)) (j := (iy1,jy)).
     simpl in Hy. rewrite Hy in H.
     rewrite Hi,Hj.

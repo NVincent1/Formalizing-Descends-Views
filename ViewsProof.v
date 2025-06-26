@@ -211,7 +211,8 @@ Proposition transpose_preserves_injectivity :
 Proof.
   unfold preserve_Injectivity.
   intros T m n C v Hinj i j x y H.
-  assert (function_injective : forall (i1 i2 : Idx m) (j1 j2: Idx n), (j1,i1) = (j2,i2) -> (i1,j1) = (i2,j2)). intros; inversion H0; subst; reflexivity.
+  assert (function_injective : forall (i1 i2 : Idx m) (j1 j2: Idx n), (j1,i1) = (j2,i2) -> (i1,j1) = (i2,j2)).
+    intros; inversion H0; subst; reflexivity.
   set (function := fun (x : Tuple (n::m::T)) => match x with | (i,(j,tx)) => (j,(i,tx)) end).
   simpl in H.
   set (fx := function x).
@@ -248,7 +249,8 @@ Proposition group_preserves_injectivity :
 Proof.
   unfold preserve_Injectivity.
   intros T m n C v Hinj i j x y H.
-  assert (function_injective : forall (xi yi : Idx n) (xj yj : Idx m), to_nat xj + m * to_nat xi = to_nat yj + m * to_nat yi -> (xi,xj) = (yi,yj)). {
+  assert (function_injective :
+  forall (xi yi : Idx n) (xj yj : Idx m), to_nat xj + m * to_nat xi = to_nat yj + m * to_nat yi -> (xi,xj) = (yi,yj)). {
     intros. apply projection_injective in H0.
     inversion H0. apply to_nat_injective in H2,H3. subst;reflexivity.
     apply BoundedInt.
