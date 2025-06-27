@@ -4,7 +4,6 @@ From Views Require Import BoundedInt.
 From Views Require Import ViewFunctions.
 Require Import PeanoNat.
 
-
 Fixpoint cat {T : Type} (A : List T) (B : List T) : List T :=
   match A with
   | [] => B
@@ -12,6 +11,7 @@ Fixpoint cat {T : Type} (A : List T) (B : List T) : List T :=
 end.
 
 Notation "A ++ B" := (cat A B).
+
 
 (* Application viewed with curryfication *)
 Fixpoint curry_partialApp  {A : List nat} {B : List nat} : ViewArray (A++B) -> Tuple A -> ViewArray B :=
@@ -44,6 +44,27 @@ Proof.
       }
       apply IHA with (x := t) in H.
       apply H.
+Qed.
+
+
+Definition partapp {B : List nat} {n : nat} (f : Tuple (n::B) -> nat) (x : Idx n) : Tuple B -> nat :=
+  fun y => f (x,y).
+
+
+Fixpoint uncurry {B : List nat} : (Tuple B -> nat) -> ViewArray B :=
+  match B with
+  | [] => fun (f : Tuple [] -> nat) => (f I : ViewArray [])
+  | n::B => fun (f : (Tuple (n::B) -> nat)) (x : Idx n) => uncurry (partapp f x)
+end.
+
+Lemma uncurry_curry_inverse :
+  forall A x v, curry_totalApp (uncurry v) (A := A) x = v x.
+  intros A x v.
+  induction A.
+  - destruct x. reflexivity.
+  - destruct x. simpl. unfold partapp.
+  assert (curry_totalApp (uncurry (fun y : Tuple A => v (i, y))) t = (fun y : Tuple A => v (i, y)) t).
+  apply IHA. simpl in H. apply H.
 Qed.
 
 Fixpoint tupcat {A : List nat} {B : List nat} : Tuple A -> Tuple B -> Tuple (A++B) :=
