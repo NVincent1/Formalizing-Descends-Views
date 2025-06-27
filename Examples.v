@@ -10,7 +10,7 @@ Axiom FunEquality :
   f = g <-> forall x, f x = g x.
 
 Example test_take_left :
-  take_left 3 (identity_view 8) =
+  view (take_left 3) (identity_view 8) =
   fun x => match x with
   | idx _ 0 _ => 0
   | idx _ 1 _ => 1
@@ -28,7 +28,7 @@ Proof.
 Qed.
 
 Example test_take_right :
-  take_right 3 (identity_view 8) =
+  view (take_right 3) (identity_view 8) =
   fun x => match x with
   | idx _ 0 _ => 3
   | idx _ 1 _ => 4
@@ -50,7 +50,7 @@ Proof.
 Qed.
 
 Example test_select_range :
-  select_range 3 5 (identity_view 8) =
+  view (select_range 3 5) (identity_view 8) =
   fun x => match x with
   | idx _ 0 _ => 3
   | idx _ 1 _ => 4
@@ -66,7 +66,7 @@ Proof.
 Qed.
 
 Example test_group :
-  group 3 (identity_view (3*2)) = 
+  view (group 3) (identity_view (3*2)) = 
   fun x y => match (x,y) with 
   | (idx _ 0 _,idx _ 0 _) => 0 | (idx _ 0 _,idx _ 1 _) => 1 | (idx _ 0 _,idx _ 2 _) => 2
   | (idx _ 1 _,idx _ 0 _) => 3 | (idx _ 1 _,idx _ 1 _) => 4 | (idx _ 1 _,idx _ 2 _) => 5
@@ -81,7 +81,7 @@ Proof.
 Qed.
 
 Example test_transpose :
-  transpose (group 3 (identity_view (3*2))) =
+  view transpose (view (group 3) (identity_view (3*2))) =
   fun x y => match (x,y) with
   | (idx _ 0 _,idx _ 0 _) => 0 | (idx _ 0 _,idx _ 1 _) => 3
   | (idx _ 1 _,idx _ 0 _) => 1 | (idx _ 1 _,idx _ 1 _) => 4
@@ -98,7 +98,7 @@ Proof.
 Qed.
 
 Example test_map :
-  (map reverse (group 3 (identity_view (3*2)))) = 
+  (map (view reverse) (view (group 3) (identity_view (3*2)))) = 
   fun x y => match (x,y) with 
   | (idx _ 0 _,idx _ 0 _) => 2 | (idx _ 0 _,idx _ 1 _) => 1 | (idx _ 0 _,idx _ 2 _) => 0
   | (idx _ 1 _,idx _ 0 _) => 5 | (idx _ 1 _,idx _ 1 _) => 4 | (idx _ 1 _,idx _ 2 _) => 3
@@ -123,12 +123,12 @@ Proof.
   unfold preserve_Injectivity in H.
   assert (0 < 2). apply le_n_S. apply le_0_n.
   assert (1 < 2). apply le_n_S. apply le_n.
-  assert (Injective (group 2 (identity_view (2*2)))).
-    assert (Injective (identity_view (2*2)) -> Injective (group 2 (identity_view (2 * 2)))).
+  assert (Injective (view (group 2) (identity_view (2*2)))).
+    assert (Injective (identity_view (2*2)) -> Injective (view (group 2) (identity_view (2 * 2)))).
     apply preserve_Injectivity_implies_preserving_view_injectivity. apply group_preserves_injectivity.
     apply H2. apply identity_view_injective.
   assert (((idx 2 1 H1,I), (idx 2 0 H0,I)) = ((idx 2 0 H0,I), (idx 2 0 H0,I))).
-  apply H with (v := (group 2 (identity_view (2*2)))) (C := (2::[]))
+  apply H with (v := (view (group 2) (identity_view (2*2)))) (C := (2::[]))
       (i := (idx 2 1 H1,I))
       (x := (idx 2 0 H0,I))
       (j := (idx 2 0 H0,I))
