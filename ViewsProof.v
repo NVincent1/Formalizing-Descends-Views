@@ -6,6 +6,9 @@ From Views Require Import ViewsLemmas.
 Require Import PeanoNat.
 
 
+Definition view {A : List nat} {B : List nat} : (Tuple B -> Tuple A) -> ViewArray A -> ViewArray B :=
+  fun f v => uncurry (fun x => curry_totalApp v (f x)).
+
 (*
 preserve_Injectivity f <-> (fun (g : C -> ViewArray A) x y -> f (g x) y) preserves injectivity of g
 *)
@@ -46,7 +49,7 @@ Qed.
 
 (** reverse *)
 Proposition reverse_preserves_injectivity :
-  forall T n, preserve_Injectivity reverse (A := (n::T)).
+  forall T n, preserve_Injectivity (view reverse) (A := (n::T)).
 Proof.
   intros T n C v Hinj i j x y H.
   assert (function_injective : (forall (x y : Idx n), n - 1 - to_nat x = n - 1 - to_nat y -> x = y)). {
@@ -57,38 +60,29 @@ Proof.
     destruct n. destruct x' as [nx Hx]. inversion Hx. simpl. rewrite Nat.sub_0_r. apply le_S_n. apply BoundedInt.
     destruct n. destruct y' as [ny Hy]. inversion Hy. simpl. rewrite Nat.sub_0_r. apply le_S_n. apply BoundedInt.
   }
-  set (function := fun (x : Tuple (n::T)) => match x with | (i,tx) => (idx n (n - 1 - to_nat i) reverseProof,tx) end).
   simpl in H.
-  set (fx := function x).
-  set (fy := function y).
   destruct x as [x tx],y as [y ty].
-  intros. unfold identity_view in function_injective,fx,fy; simpl in function_injective,fx,fy.
-  destruct C.
-  - simpl in *. unfold Injective in Hinj.
-    destruct i,j.
-    apply Hinj with (x := fx) (y := fy) in H.
-    unfold fx,fy in H.
-    inversion H.
-    apply function_injective in H1.
-    subst;reflexivity.
-  - destruct i as [i ti],j as [j tj].
-    set (i' := (i,ti)) in *.
-    set (x' := fx) in *.
-    set (j' := (j,tj)) in *.
-    set (y' := fy) in *.
-    assert (Heq : (curry_totalApp (curry_partialApp v i') x') = (curry_totalApp (curry_partialApp v j') y')-> (i',x') = (j',y')).
-    apply injectivity_decomposition. apply Hinj.
-    simpl in *.
-    apply Heq in H.
-    unfold i',j',x',y' in *.
-    inversion H.
-    apply function_injective in H3.
-    subst;reflexivity.
+  unfold view in H.
+  assert (Hx:curry_totalApp (uncurry (fun x : Tuple [[T; n]] => curry_totalApp (curry_partialApp v i) (reverse x)) x) tx
+          = (fun x => curry_totalApp (curry_partialApp v i) (reverse x)) (x, tx)).
+  apply uncurry_curry_inverse.
+  rewrite Hx in H.
+  assert (Hy:curry_totalApp (uncurry (fun x : Tuple [[T; n]] => curry_totalApp (curry_partialApp v j) (reverse x)) y) ty
+          = (fun x => curry_totalApp (curry_partialApp v j) (reverse x)) (y, ty)).
+  apply uncurry_curry_inverse.
+  rewrite Hy in H.
+  clear Hx. clear Hy.
+  intros.
+  apply injectivity_decomposition in H.
+  inversion H.
+  apply function_injective in H2.
+  subst;reflexivity.
+  apply Hinj.
 Qed.
 
 (** take_left *)
 Proposition take_left_preserves_injectivity :
-  forall T n b, preserve_Injectivity (take_left b) (A := ((b+n)::T)).
+  forall T n b, preserve_Injectivity (view (take_left b)) (A := ((b+n)::T)).
 Proof.
   intros T n b C v Hinj i j x y H.
   assert (function_injective : (forall (x y : Idx (b)), to_nat x = to_nat y -> x = y)). {
@@ -96,38 +90,29 @@ Proof.
     apply to_nat_injective in H'.
     apply H'.
   }
-  set (function := fun (x : Tuple (b::T)) => match x with | (i,tx) => (idx (b+n) (to_nat i) takeleftProof,tx) end).
   simpl in H.
-  set (fx := function x).
-  set (fy := function y).
   destruct x as [x tx],y as [y ty].
-  intros. unfold identity_view in function_injective,fx,fy; simpl in function_injective,fx,fy.
-  destruct C.
-  - simpl in *. unfold Injective in Hinj.
-    destruct i,j.
-    apply Hinj with (x := fx) (y := fy) in H.
-    unfold fx,fy in H.
-    inversion H.
-    apply function_injective in H1.
-    subst;reflexivity.
-  - destruct i as [i ti],j as [j tj].
-    set (i' := (i,ti)) in *.
-    set (x' := fx) in *.
-    set (j' := (j,tj)) in *.
-    set (y' := fy) in *.
-    assert (Heq : (curry_totalApp (curry_partialApp v i') x') = (curry_totalApp (curry_partialApp v j') y')-> (i',x') = (j',y')).
-    apply injectivity_decomposition. apply Hinj.
-    simpl in *.
-    apply Heq in H.
-    unfold i',j',x',y' in *.
-    inversion H.
-    apply function_injective in H3.
-    subst;reflexivity.
+  unfold view in H.
+  assert (Hx:curry_totalApp (uncurry (fun x => curry_totalApp (curry_partialApp v i) ((take_left b) x)) x) tx
+          = (fun x => curry_totalApp (curry_partialApp v i) ((take_left b) x)) (x, tx)).
+  apply uncurry_curry_inverse.
+  rewrite Hx in H.
+  assert (Hy:curry_totalApp (uncurry (fun x => curry_totalApp (curry_partialApp v j) ((take_left b) x)) y) ty
+          = (fun x => curry_totalApp (curry_partialApp v j) ((take_left b) x)) (y, ty)).
+  apply uncurry_curry_inverse.
+  rewrite Hy in H.
+  clear Hx. clear Hy.
+  intros.
+  apply injectivity_decomposition in H.
+  inversion H.
+  apply function_injective in H2.
+  subst;reflexivity.
+  apply Hinj.
 Qed.
 
 (** take_right *)
 Proposition take_right_preserves_injectivity :
-  forall T n a, preserve_Injectivity (take_right a) (A := ((a+n)::T)).
+  forall T n a, preserve_Injectivity (view (take_right a)) (A := ((a+n)::T)).
 Proof.
   intros T n a C v Hinj i j x y H.
   assert (function_injective : (forall (x y : Idx n), a + to_nat x = a + to_nat y -> x = y)). {
@@ -136,38 +121,29 @@ Proof.
     apply to_nat_injective in H'.
     apply H'.
   }
-  set (function := fun (x : Tuple (n::T)) => match x with | (i,tx) => (idx (a+n) (a+to_nat i) takerightProof,tx) end).
   simpl in H.
-  set (fx := function x).
-  set (fy := function y).
   destruct x as [x tx],y as [y ty].
-  intros. unfold identity_view in function_injective,fx,fy; simpl in function_injective,fx,fy.
-  destruct C.
-  - simpl in *. unfold Injective in Hinj.
-    destruct i,j.
-    apply Hinj with (x := fx) (y := fy) in H.
-    unfold fx,fy in H.
-    inversion H.
-    apply function_injective in H1.
-    subst;reflexivity.
-  - destruct i as [i ti],j as [j tj].
-    set (i' := (i,ti)) in *.
-    set (x' := fx) in *.
-    set (j' := (j,tj)) in *.
-    set (y' := fy) in *.
-    assert (Heq : (curry_totalApp (curry_partialApp v i') x') = (curry_totalApp (curry_partialApp v j') y')-> (i',x') = (j',y')).
-    apply injectivity_decomposition. apply Hinj.
-    simpl in *.
-    apply Heq in H.
-    unfold i',j',x',y' in *.
-    inversion H.
-    apply function_injective in H3.
-    subst;reflexivity.
+  unfold view in H.
+  assert (Hx:curry_totalApp (uncurry (fun x => curry_totalApp (curry_partialApp v i) ((take_right a) x)) x) tx
+          = (fun x => curry_totalApp (curry_partialApp v i) ((take_right a) x)) (x, tx)).
+  apply uncurry_curry_inverse.
+  rewrite Hx in H.
+  assert (Hy:curry_totalApp (uncurry (fun x => curry_totalApp (curry_partialApp v j) ((take_right a) x)) y) ty
+          = (fun x => curry_totalApp (curry_partialApp v j) ((take_right a) x)) (y, ty)).
+  apply uncurry_curry_inverse.
+  rewrite Hy in H.
+  clear Hx. clear Hy.
+  intros.
+  apply injectivity_decomposition in H.
+  inversion H.
+  apply function_injective in H2.
+  subst;reflexivity.
+  apply Hinj.
 Qed.
 
 (** select_range *)
 Proposition select_range_preserves_injectivity :
-  forall T n a b, preserve_Injectivity (select_range a b) (A := ((b+n)::T)).
+  forall T n a b, preserve_Injectivity (view (select_range a b)) (A := ((b+n)::T)).
 Proof.
   intros T n a b C v Hinj i j x y H.
   assert (function_injective : (forall (x y : Idx (b-a)), a + to_nat x = a + to_nat y -> x = y)). {
@@ -176,76 +152,58 @@ Proof.
     apply to_nat_injective in H'.
     apply H'.
   }
-  set (function := fun (x : Tuple ((b-a)::T)) => match x with | (i,tx) => (idx (b+n) (a+to_nat i) selectrangeProof,tx) end).
   simpl in H.
-  set (fx := function x).
-  set (fy := function y).
   destruct x as [x tx],y as [y ty].
-  intros. unfold identity_view in function_injective,fx,fy; simpl in function_injective,fx,fy.
-  destruct C.
-  - simpl in *. unfold Injective in Hinj.
-    destruct i,j.
-    apply Hinj with (x := fx) (y := fy) in H.
-    unfold fx,fy in H.
-    inversion H.
-    apply function_injective in H1.
-    subst;reflexivity.
-  - destruct i as [i ti],j as [j tj].
-    set (i' := (i,ti)) in *.
-    set (x' := fx) in *.
-    set (j' := (j,tj)) in *.
-    set (y' := fy) in *.
-    assert (Heq : (curry_totalApp (curry_partialApp v i') x') = (curry_totalApp (curry_partialApp v j') y')-> (i',x') = (j',y')).
-    apply injectivity_decomposition. apply Hinj.
-    simpl in *.
-    apply Heq in H.
-    unfold i',j',x',y' in *.
-    inversion H.
-    apply function_injective in H3.
-    subst;reflexivity.
+  unfold view in H.
+  assert (Hx:curry_totalApp (uncurry (fun x => curry_totalApp (curry_partialApp v i) ((select_range a b) x)) x) tx
+          = (fun x => curry_totalApp (curry_partialApp v i) ((select_range a b) x)) (x, tx)).
+  apply uncurry_curry_inverse.
+  rewrite Hx in H.
+  assert (Hy:curry_totalApp (uncurry (fun x => curry_totalApp (curry_partialApp v j) ((select_range a b) x)) y) ty
+          = (fun x => curry_totalApp (curry_partialApp v j) ((select_range a b) x)) (y, ty)).
+  apply uncurry_curry_inverse.
+  rewrite Hy in H.
+  clear Hx. clear Hy.
+  intros.
+  apply injectivity_decomposition in H.
+  inversion H.
+  apply function_injective in H2.
+  subst;reflexivity.
+  apply Hinj.
 Qed.
 
 (** transpose *)
 Proposition transpose_preserves_injectivity :
-  forall T m n, preserve_Injectivity transpose (A := (m::n::T)).
+  forall T m n, preserve_Injectivity (view transpose) (A := (m::n::T)).
 Proof.
   unfold preserve_Injectivity.
   intros T m n C v Hinj i j x y H.
   assert (function_injective : forall (i1 i2 : Idx m) (j1 j2: Idx n), (j1,i1) = (j2,i2) -> (i1,j1) = (i2,j2)).
     intros; inversion H0; subst; reflexivity.
-  set (function := fun (x : Tuple (n::m::T)) => match x with | (i,(j,tx)) => (j,(i,tx)) end).
   simpl in H.
-  set (fx := function x).
-  set (fy := function y).
-  destruct x as [x1 tx],y as [y1 ty], tx as [x2 tx], ty as [y2 ty].
-  intros. unfold identity_view in function_injective,fx,fy; simpl in function_injective,fx,fy.
-  destruct C.
-  - simpl in *. unfold Injective in Hinj.
-    destruct i,j.
-    apply Hinj with (x := fx) (y := fy) in H.
-    unfold fx,fy in H.
-    inversion H.
-    try apply function_injective in H1.
-    subst;reflexivity.
-  - destruct i as [i ti],j as [j tj].
-    set (i' := (i,ti)) in *.
-    set (x' := fx) in *.
-    set (j' := (j,tj)) in *.
-    set (y' := fy) in *.
-    assert (Heq : (curry_totalApp (curry_partialApp v i') x') = (curry_totalApp (curry_partialApp v j') y')-> (i',x') = (j',y')).
-    apply injectivity_decomposition. apply Hinj.
-    simpl in *.
-    apply Heq in H.
-    unfold i',j',x',y' in *.
-    inversion H.
-    try apply function_injective in H3.
-    subst;reflexivity.
+  destruct x as [xi tx], tx as [xj tx],y as [yi ty], ty as [yj ty].
+  unfold view in H.
+  assert (Hx:curry_totalApp (uncurry (fun x => curry_totalApp (curry_partialApp v i) (transpose x)) xi xj) tx
+          = (fun x => curry_totalApp (curry_partialApp v i) (transpose x)) (xi, (xj,tx))).
+  apply uncurry_curry_inverse.
+  rewrite Hx in H.
+  assert (Hy:curry_totalApp (uncurry (fun x => curry_totalApp (curry_partialApp v j) (transpose x)) yi yj) ty
+          = (fun x => curry_totalApp (curry_partialApp v j) (transpose x)) (yi, (yj,ty))).
+  apply uncurry_curry_inverse.
+  rewrite Hy in H.
+  clear Hx. clear Hy.
+  intros.
+  apply injectivity_decomposition in H.
+  simpl in *.
+  inversion H.
+  subst;reflexivity.
+  apply Hinj.
 Qed.
 
 
 (** group *)
 Proposition group_preserves_injectivity :
-  forall T m n, preserve_Injectivity (group m) (A := (m*n::T)).
+  forall T m n, preserve_Injectivity (view (group m)) (A := (m*n::T)).
 Proof.
   unfold preserve_Injectivity.
   intros T m n C v Hinj i j x y H.
@@ -256,35 +214,29 @@ Proof.
     apply BoundedInt.
     apply BoundedInt.
   }
-  set (function := fun (x : Tuple (n::m::T)) => match x with | (i,(j,tx)) =>
-      (idx (m*n) (to_nat j + m*(to_nat i)) groupProof,tx) end).
   simpl in H.
-  set (fx := function x).
-  set (fy := function y).
-  destruct x as [x1 tx],y as [y1 ty], tx as [x2 tx], ty as [y2 ty].
-  intros. unfold identity_view in function_injective,fx,fy; simpl in function_injective,fx,fy.
-  destruct C.
-  - simpl in *. unfold Injective in Hinj.
-    destruct i,j.
-    apply Hinj with (x := fx) (y := fy) in H.
-    unfold fx,fy in H.
-    inversion H.
-    try apply function_injective in H1; injection H1.
-    intros;subst;reflexivity.
-  - destruct i as [i ti],j as [j tj].
-    set (i' := (i,ti)) in *.
-    set (x' := fx) in *.
-    set (j' := (j,tj)) in *.
-    set (y' := fy) in *.
-    assert (Heq : (curry_totalApp (curry_partialApp v i') x') = (curry_totalApp (curry_partialApp v j') y')-> (i',x') = (j',y')).
-    apply injectivity_decomposition. apply Hinj.
-    simpl in *.
-    apply Heq in H.
-    unfold i',j',x',y' in *.
-    inversion H.
-    try apply function_injective in H3.
-    try injection H3;intros.
-    subst;reflexivity.
+  destruct x as [xi tx], tx as [xj tx],y as [yi ty], ty as [yj ty].
+  unfold view in H.
+  assert (Hx:curry_totalApp (uncurry (fun x => curry_totalApp (curry_partialApp v i) (group m x)) xi xj) tx
+          = (fun x => curry_totalApp (curry_partialApp v i) (group m x)) (xi, (xj,tx))).
+  apply uncurry_curry_inverse.
+  rewrite Hx in H.
+  assert (Hy:curry_totalApp (uncurry (fun x => curry_totalApp (curry_partialApp v j) (group m x)) yi yj) ty
+          = (fun x => curry_totalApp (curry_partialApp v j) (group m x)) (yi, (yj,ty))).
+  apply uncurry_curry_inverse.
+  rewrite Hy in H.
+  clear Hx. clear Hy.
+  intros.
+  apply injectivity_decomposition in H.
+  inversion H.
+  apply projection_injective in H2.
+  inversion H2.
+  apply to_nat_injective in H4.
+  apply to_nat_injective in H5.
+  subst;reflexivity.
+  apply BoundedInt.
+  apply BoundedInt.
+  apply Hinj.
 Qed.
 
 
