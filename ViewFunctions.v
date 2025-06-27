@@ -24,37 +24,33 @@ Fixpoint ViewArray (d : List nat) :=
   | h::tl => Idx h -> (ViewArray tl)
 end.
 
-Definition CurryViewArray (d : List nat) :=
-  Tuple d -> nat
-.
-
 Notation "[[ T ; n ]]" := (n::T).
 Notation "[[ ; n ]]" := (n::[]).
+
 Definition identity_view (n : nat) : ViewArray [[;n]] :=
 (* View resulting from applying `to_view` on an array :
   i-th element of the view is the i-th element of the array *)
   fun i => to_nat i.
 
-Definition reverse {T : List nat} {n : nat} : Tuple (n::T) -> Tuple (n::T) :=
-  fun i => match i with | (i,x) => (idx n (n - 1 - to_nat i) reverseProof,x) end.
+Definition reverse {T : List nat} {n : nat} (v : ViewArray [[T;n]]) : ViewArray [[T;n]] :=
+  fun i => v (idx n (n - 1 - to_nat i) reverseProof).
 
-Definition take_left {T : List nat} {n : nat} (b : nat) : Tuple (b::T) -> Tuple (b+n::T) :=
-  fun i => match i with | (i,x) => (idx (b+n) (to_nat i) takeleftProof,x) end.
+Definition take_left {T : List nat} {n : nat} (b : nat) (v : ViewArray [[T;b+n]]) : ViewArray [[T;b]] :=
+  fun i => v (idx (b+n) (to_nat i) takeleftProof).
 
-Definition take_right {T : List nat} {n : nat} (a : nat) : Tuple (n::T) -> Tuple (a+n::T)  :=
-  fun i => match i with | (i,x) => (idx (a+n) (a + to_nat i) takerightProof,x) end.
+Definition take_right {T : List nat} {n : nat} (a : nat) (v : ViewArray [[T;a+n]]) : ViewArray [[T;n]] :=
+  fun i => v (idx (a+n) (a + to_nat i) takerightProof).
 
-Definition select_range {T : List nat} {n : nat} (a : nat) (b : nat) : Tuple (b-a::T) -> Tuple (b+n::T) :=
-  fun i => match i with | (i,x) => (idx (b+n) (a + to_nat i) selectrangeProof,x) end.
+Definition select_range {T : List nat} {n : nat} (a : nat) (b : nat) (v : ViewArray [[T;b+n]]) : ViewArray [[T;(b-a)]] :=
+  fun i => v (idx (b+n) (a + to_nat i) selectrangeProof).
 
-Definition transpose {T : List nat} {n : nat} {m : nat} : Tuple (m::n::T) -> Tuple (n::m::T) :=
-  fun x => match x with | (i,(j,x)) => (j,(i,x)) end.
+Definition transpose {T : List nat} {n : nat} {m : nat} (v : ViewArray [[ [[T;m]];n ]]) : ViewArray [[ [[T;n]];m ]] :=
+  fun i j => v j i.
 
 (* m is the size of the groups *)
-Definition group {T : List nat} {n : nat} (m : nat) : Tuple (n::m::T) -> Tuple (m*n::T) :=
-  fun x => match x with | (i,(j,x)) => (idx (m*n) (to_nat j + m*(to_nat i)) groupProof,x) end.
+Definition group {T : List nat} {n : nat} (m : nat) (v : ViewArray [[T;m*n]]) : ViewArray [[ [[T;m]];n]] :=
+  fun i j => v (idx (m*n) (to_nat j + m*(to_nat i)) groupProof).
 
-
-Definition map {A : List nat} {B : List nat} {n : nat} (f : CurryViewArray A -> CurryViewArray B) (v : CurryViewArray [[A;n]]) : CurryViewArray [[B;n]] :=
-  fun x => match x with | (i,x) => f (fun t => v (i,t)) x end.
+Definition map {A : List nat} {B : List nat} {n : nat} (f : ViewArray A -> ViewArray B) (v : ViewArray [[A;n]]) : ViewArray [[B;n]] :=
+  fun i => f (v i).
 
