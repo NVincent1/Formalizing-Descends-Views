@@ -138,7 +138,7 @@ Ltac2 reordering_autoProof2 (f:constr) (f_id:ident) :=
   ).
 
 
-Ltac2 reordering_autoProof (f:constr) (f_id:ident) (dim : int):=
+Ltac2 reordering_autoProof (dim : int):=
 (* Semi-Automatic proof of correctness for reordering functions :
   takes as inputs :
   - a hint function, the reordering function, given as constr and ident
@@ -148,8 +148,12 @@ Ltac2 reordering_autoProof (f:constr) (f_id:ident) (dim : int):=
   for more complex functions you will have to use `auto_destruct`
   as well as `auto_apply` after disjuncting the cases (cf. the transposition example in `Examples_automation.v`
 *)
-  auto_destruct dim;
-  reordering_autoProof2 f f_id.
+  apply injective_function_preserve_injectivity;
+  intros x y H;
+  do dim (destruction ());
+  do dim (destruction ());
+  inversion H;
+  subst.
 
 
 

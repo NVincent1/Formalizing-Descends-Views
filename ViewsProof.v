@@ -266,4 +266,26 @@ Proof.
   injection H. intros;subst;split;reflexivity.
 Qed.
 
+Theorem injective_function_preserve_injectivity :
+  forall A B (f : Tuple B -> Tuple A),
+  (forall x y, f x = f y -> x =y) -> preserve_Injectivity (view f).
+Proof.
+  intros A B f f_inj C v v_inj i j x y H.
+  unfold view in H.
+  assert (Hx:curry_totalApp (uncurry (fun x : Tuple B => curry_totalApp (curry_partialApp v i) (f x))) x =
+    curry_totalApp (curry_partialApp v i) (f x)).
+  apply uncurry_curry_inverse.
+  rewrite Hx in H.
+  assert (Hy:curry_totalApp (uncurry (fun x : Tuple B => curry_totalApp (curry_partialApp v j) (f x))) y =
+    curry_totalApp (curry_partialApp v j) (f y)).
+  apply uncurry_curry_inverse.
+  rewrite Hy in H.
+  clear Hx. clear Hy.
+  apply injectivity_decomposition in H.
+  inversion H.
+  apply f_inj in H2.
+  subst; reflexivity.
+  apply v_inj.
+Qed.
+
 
