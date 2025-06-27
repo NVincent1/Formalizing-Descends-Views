@@ -19,7 +19,7 @@ Theorem BoundedInt :
   (to_nat i) < n.
 Proof.
   intros.
-  unfold to_nat. destruct i. apply H.
+  destruct i. apply H.
 Qed.
 
 (* Equality between two bounded integers of the same value, but with different proofs (reflexivity fails) *)
@@ -36,28 +36,28 @@ Qed.
 
 (** Proofs needed for the definition of the functions in `ViewFunctions.v` *)
 
-Definition reverseProof {l : nat} {i : Idx l} :
+Definition reverseBounded {l : nat} {i : Idx l} :
   l > l - 1 - to_nat i.
 Proof.
   destruct i as [i Hi].
   destruct l. inversion Hi. simpl. unfold gt. unfold lt. rewrite Nat.sub_0_r. apply le_n_S. apply Nat.le_sub_l.
 Qed.
 
-Definition takeleftProof {b : nat} {n : nat} {i : Idx b} :
+Definition takeleftBounded {b : nat} {n : nat} {i : Idx b} :
  to_nat i < b + n.
 Proof.
   apply Nat.lt_lt_add_r.
   apply BoundedInt.
 Qed.
 
-Definition takerightProof {a : nat} {n : nat} {i : Idx n} :
+Definition takerightBounded {a : nat} {n : nat} {i : Idx n} :
  a + to_nat i < a + n.
 Proof.
   apply Nat.add_lt_mono_l.
   apply BoundedInt.
 Qed.
 
-Definition selectrangeProof {a : nat} {b : nat} {n : nat} {i : Idx (b-a)} :
+Definition selectrangeBounded {a : nat} {b : nat} {n : nat} {i : Idx (b-a)} :
   a + to_nat i < b + n.
 Proof.
   destruct i.
@@ -70,7 +70,7 @@ Proof.
     rewrite H0 in H1. apply Nat.le_trans with (m := b). apply H1. apply Nat.le_add_r. apply E.
 Qed.
 
-Definition groupProof {m : nat} {n : nat} {i : Idx m} {j : Idx n} :
+Definition groupBounded {m : nat} {n : nat} {i : Idx m} {j : Idx n} :
   m * n > to_nat i + m * to_nat j.
 Proof.
   destruct i as [ni Hi]; destruct j as [nj Hj].
