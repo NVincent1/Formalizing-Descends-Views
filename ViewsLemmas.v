@@ -1,16 +1,10 @@
 
 From Views Require Import Lemmas.
+From Views Require Import utils.
 From Views Require Import BoundedInt.
 From Views Require Import ViewFunctions.
 Require Import PeanoNat.
 
-Fixpoint cat {T : Type} (A : List T) (B : List T) : List T :=
-  match A with
-  | [] => B
-  | h::tl => h::(cat tl B)
-end.
-
-Notation "A ++ B" := (cat A B).
 
 
 (* Application viewed with curryfication *)

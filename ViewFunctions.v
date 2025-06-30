@@ -1,22 +1,9 @@
 
 From Views Require Import BoundedInt.
+From Views Require Import utils.
 Require Import PeanoNat.
 
 
-
-Inductive List (T : Type) : Type :=
-  | Nil : List T
-  | Cons (h : T) (tl : List T) : List T
-.
-
-Notation "h :: tl" := (Cons _ h tl).
-Notation "[]" := (Nil _).
-
-Fixpoint Tuple (d : List nat) : Type :=
-  match d with
-  | [] => True
-  | h::tl => (Idx h) * (Tuple tl)
-end.
 
 Fixpoint ViewArray (d : List nat) :=
   match d with
