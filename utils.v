@@ -35,3 +35,27 @@ Fixpoint zip {T : Type} (l : List (List T)) : List T :=
   | [] => []
   | h::tl => h ++ (zip tl)
 end.
+
+Definition cropBounded {n : nat} {i : Idx n} :
+  to_nat i < S n.
+Proof.
+  apply le_S. apply BoundedInt.
+Qed.
+
+Definition crop {T : Type} {n : nat} (f : Idx (S n) -> T) : Idx n -> T :=
+  fun i => f (idx (S n) (to_nat i) cropBounded)
+.
+
+Fixpoint buildList {T : Type} {n : nat} : (Idx n -> T) -> List T :=
+  match n with
+  | 0 => fun f => []
+  | S n => fun f => (f maxIdx)::(buildList (crop f))
+end.
+
+Fixpoint rev {T : Type} (l : List T) :=
+  match l with
+  | [] => []
+  | h :: tl => (rev tl) ++ (h :: [])
+end.
+
+

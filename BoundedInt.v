@@ -80,3 +80,9 @@ Proof.
   - rewrite Nat.mul_succ_r. rewrite Nat.add_comm. unfold gt. unfold lt. rewrite <- Nat.add_succ_l. apply Nat.add_le_mono.
   apply Hi. subst. apply Nat.mul_le_mono_l. apply le_S_n in Hj. apply Hj.
 Qed.
+
+Definition zero {n : nat} :=
+  idx (S n) 0 (Nat.lt_0_succ n).
+
+Definition maxIdx {n : nat} :=
+  idx (S n) n (le_n (S n)).
