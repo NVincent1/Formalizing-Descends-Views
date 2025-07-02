@@ -114,44 +114,43 @@ end.
 Notation "[ l ]" := (Nest _ l).
 Notation "# x" := (Elt _ x) (at level 20).
 
-Definition shiftBounded {a : nat} {b : nat} {n : nat} {i : Idx (b-a)} :
-  a + to_nat i < n.
-Proof.
-Admitted.
-
-Definition shift {n : nat} {b : nat} {a : nat} (i : Idx (b-a)) : Idx n :=
-  idx n (a + to_nat i) shiftBounded.
+Definition err_b (shp : shape) : Block_t shp := match shp with | (x,y,z) => fun i j k => t 0 end.
 
 Fixpoint select (e : execution_resource) (l : nat) (r : nat) (d : dimension) : execution_resource :=
   match e,d with
   | Collection n v,_ => Collection n (fun x => select (v x) l r d)
-  | grid (_,1,1) shp' g, _x => Collection (r-l) (fun i => block shp' (g (shift i) zero zero))
-  | grid (1,_,1) shp' g, _y => Collection (r-l) (fun j => block shp' (g zero (shift j) zero))
-  | grid (1,1,_) shp' g, _z => Collection (r-l) (fun k => block shp' (g zero zero (shift k)))
+  | grid (_,1,1) shp' g, _x => Collection (r-l) (fun i => block shp' ((shift (fun i j => err_b shp') g) i zero zero))
+  | grid (1,_,1) shp' g, _y => Collection (r-l) (fun j => block shp' ((shift (fun j => err_b shp') (g zero)) j zero))
+  | grid (1,1,_) shp' g, _z => Collection (r-l) (fun k => block shp' ((shift (err_b shp') (g zero zero)) k))
   | grid (1,_,_) _ _, _x => Error
   | grid (_,1,_) _ _, _y => Error
   | grid (_,_,1) _ _, _z => Error
-  | grid (_,y,z) shp' g, _x => Collection (r-l) (fun i => grid (1,y,z) shp' (fun _ j k => g (shift i) j k))
-  | grid (x,_,z) shp' g, _y => Collection (r-l) (fun j => grid (x,1,z) shp' (fun i _ k => g i (shift j) k))
-  | grid (x,y,_) shp' g, _z => Collection (r-l) (fun k => grid (x,y,1) shp' (fun i j _ => g i j (shift k)))
-  | block (_,1,1) b, _x => Collection (r-l) (fun i => thread (b (shift i) zero zero))
-  | block (1,_,1) b, _y => Collection (r-l) (fun j => thread (b zero (shift j) zero))
-  | block (1,1,_) b, _z => Collection (r-l) (fun k => thread (b zero zero (shift k)))
+  | grid (_,y,z) shp' g, _x => Collection (r-l) (fun i => grid (1,y,z) shp' (fun _ j k => (shift (fun i j => err_b shp') g) i j k))
+  | grid (x,_,z) shp' g, _y => Collection (r-l) (fun j => grid (x,1,z) shp' (fun i _ k => (shift (fun j => err_b shp') (g i)) j k))
+  | grid (x,y,_) shp' g, _z => Collection (r-l) (fun k => grid (x,y,1) shp' (fun i j _ => (shift (err_b shp') (g i j)) k))
+  | block (_,1,1) b, _x => Collection (r-l) (fun i => thread ((shift (fun i j => t 0) b) i zero zero))
+  | block (1,_,1) b, _y => Collection (r-l) (fun j => thread ((shift (fun j => t 0) (b zero)) j zero))
+  | block (1,1,_) b, _z => Collection (r-l) (fun k => thread ((shift (t 0) (b zero zero)) k))
   | block (1,_,_) _, _x => Error
   | block (_,1,_) _, _y => Error
   | block (_,_,1) _, _z => Error
-  | block (_,y,z) b, _x => Collection (r-l) (fun i => block (1,y,z) (fun _ j k => b (shift i) j k))
-  | block (x,_,z) b, _y => Collection (r-l) (fun j => block (x,1,z) (fun i _ k => b i (shift j) k))
-  | block (x,y,_) b, _z => Collection (r-l) (fun k => block (x,y,1) (fun i j _ => b i j (shift k)))
+  | block (_,y,z) b, _x => Collection (r-l) (fun i => block (1,y,z) (fun _ j k => (shift (fun i j => t 0) b) i j k))
+  | block (x,_,z) b, _y => Collection (r-l) (fun j => block (x,1,z) (fun i _ k => (shift (fun j => t 0) (b i)) j k))
+  | block (x,y,_) b, _z => Collection (r-l) (fun k => block (x,y,1) (fun i j _ => (shift (t 0) (b i j)) k))
   | warp w, _x => Collection 32 (fun i => thread (w i))
   | _,_ => Error
 end.
 
 Example test :
-  to_list (for_all (for_all (select (Block (3,2,100)) 0 2 _z) _y) _x) = [ [] ].
+  to_list (select (Block (1,1,32)) 2 5 _z) = [[]].
 Proof.
-  simpl. unfold crop. simpl.
-  
+  simpl; unfold crop; unfold shift; simpl; unfold crop_left;
+  unfold take_left; unfold rtake_left;
+  unfold take_right; unfold rtake_right;
+  simpl; unfold expand;
+  unfold reverse; unfold expand_left; simpl; unfold crop; unfold crop_left;
+  simpl.
+
 
 
 
