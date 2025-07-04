@@ -56,10 +56,10 @@ Definition crop_left {T : Type} {n : nat} (f : Idx (S n) -> T) : Idx n -> T :=
   fun i => f (idx (S n) (S(to_nat i)) cropleftBounded)
 .
 
-Fixpoint buildList {T : Type} {n : nat} : (Idx n -> T) -> List T :=
+Fixpoint buildList {T : Type} (n : nat) : (nat -> T) -> List T :=
   match n with
   | 0 => fun f => []
-  | S n => fun f => (f maxIdx)::(buildList (crop f))
+  | S n => fun f => (f n)::(buildList n f)
 end.
 
 Fixpoint rev {T : Type} (l : List T) :=
