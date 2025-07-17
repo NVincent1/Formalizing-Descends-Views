@@ -1,0 +1,409 @@
+
+From Views Require Import utils.
+From Views Require Import Execution_resources.
+From Views Require Import Execution_resources_blocks.
+From Views Require Import Execution_resources_grids.
+From Views Require Import Execution_resources_lemmas.
+From Views Require Import Execution_resources_functions_correctness_lemmas.
+From Views Require Import Execution_resources_functions_correctness.
+Require Import PeanoNat.
+
+Lemma lesser_multiple_is_a_multiple1 :
+  forall n m,
+  lesser_multiple (n*m) m = n*m.
+Proof.
+  destruct n.
+  - intro. simpl. unfold lesser_multiple. rewrite Nat.Div0.mod_0_l. reflexivity.
+  - destruct m. rewrite Nat.mul_0_r. reflexivity.
+    unfold lesser_multiple. rewrite Nat.Div0.mod_mul. reflexivity.
+Qed.
+
+Lemma lesser_multiple_aux_is_a_multiple :
+  forall n k m,
+    k < m ->
+  lesser_multiple_aux (n*m+k) m = n*m.
+Proof.
+  destruct n.
+  - intros. simpl. unfold lesser_multiple_aux.
+    induction k.
+    + reflexivity.
+    + assert (S k mod m = S k). apply Nat.mod_small. apply H.
+    rewrite H0. apply IHk. apply le_S_n. apply le_S. apply H.
+  - destruct m; intros. rewrite Nat.mul_0_r. inversion H.
+    induction k.
+    + assert ((S n * S m + 0) mod (S m) = 0). rewrite Nat.Div0.add_mod. rewrite Nat.Div0.mod_mul.
+      rewrite Nat.mod_small. rewrite Nat.mod_small. reflexivity. apply H.  rewrite Nat.mod_small; apply H.
+      simpl in *. rewrite H0. rewrite Nat.add_0_r. reflexivity.
+    + assert ((S n * S m + S k) mod (S m) = S k). rewrite Nat.Div0.add_mod. rewrite Nat.Div0.mod_mul.
+      rewrite Nat.mod_small. rewrite Nat.mod_small. reflexivity. apply H.  rewrite Nat.mod_small; apply H.
+      simpl in H0. simpl. rewrite H0.
+      clear H0.
+      assert (m + n * S m + S k = S n * S m + k).
+        simpl. rewrite plus_n_Sm. reflexivity.
+      rewrite H0. apply IHk. apply le_S. apply le_S_n. apply H.
+Qed.
+
+Lemma lesser_multiple_is_a_multiple :
+  forall n k m,
+    k < m -> k > 0 ->
+  lesser_multiple (n*m+k) m = (S n)*m.
+Proof.
+  destruct k.
+  - intros. inversion H0.
+  - intros. unfold lesser_multiple.
+  assert ((n * m + S k) mod m = S k). rewrite Nat.Div0.add_mod. rewrite Nat.Div0.mod_mul.
+    rewrite Nat.mod_small. rewrite Nat.mod_small. reflexivity. apply H.  rewrite Nat.mod_small; apply H.
+    rewrite H1. assert (n * m + S k + m = (S n) * m + S k). simpl. rewrite Nat.add_comm.
+    rewrite Nat.add_assoc. reflexivity. rewrite H2.
+    apply lesser_multiple_aux_is_a_multiple. apply H.
+Qed.
+
+Lemma multiple :
+  forall m n,
+  exists k, n = k*m + (n mod m)
+.
+Proof.
+  intros.
+  exists (n/m).
+  rewrite Nat.mul_comm. apply Nat.Div0.div_mod.
+Qed.
+
+Lemma lesser_multiple_0 :
+  forall m,
+  lesser_multiple 0 m = 0.
+Proof.
+  intros.
+  unfold lesser_multiple. rewrite Nat.Div0.mod_0_l. reflexivity.
+Qed.
+
+Lemma lesser_multiple_1 :
+  forall n,
+  lesser_multiple n 1 = n.
+Proof.
+  intros.
+  assert (lesser_multiple n 1 = lesser_multiple (n*1) 1).
+    rewrite Nat.mul_1_r. reflexivity.
+  rewrite H. rewrite lesser_multiple_is_a_multiple1.
+  rewrite Nat.mul_1_r. reflexivity.
+Qed.
+
+Proposition expand_block :
+  forall T (i : T) x dx y z n n' f b,
+  count i (map f (thread_set_3xyz dx y z (fun x0 : ThreadId_t => x0 :: [])
+        (fun i0 j k0 : nat => b (x+i0) j k0))) n /\ 
+        count i (map f (thread_set_3xyz x y z (fun x0 : ThreadId_t => x0 :: [])
+        (fun i0 j k0 : nat => b i0 j k0))) n' ->
+        count i (map f (thread_set_3xyz (x+dx) y z (fun x0 : ThreadId_t => x0 :: [])
+        (fun i0 j k0 : nat => b i0 j k0))) (n + n').
+Proof.
+  induction dx.
+  - intros. simpl in *. destruct H; inversion H;subst. rewrite Nat.add_0_r. apply H0.
+  - simpl in *. destruct y,z.
+    + intros. destruct H. destruct x; inversion H; inversion H0; subst; apply empty.
+    + intros. destruct H. destruct x; inversion H; inversion H0; subst; apply empty.
+    + intros. destruct H. destruct x; inversion H; inversion H0; subst; apply empty.
+    + intros. destruct H. rewrite cons_cat in H.
+    repeat (rewrite map_cat in *).
+    apply cat_count_rev in H.
+    destruct H as [m1 [m2 [H1 [H2 H']]]]; subst.
+    apply cat_count_rev in H2.
+    destruct H2 as [m3 [m4 [H2 [H4 H']]]]; subst.
+    apply cat_count_rev in H2.
+    destruct H2 as [m5 [m6 [H2 [H3 H']]]]; subst.
+    rewrite <- plus_n_Sm. simpl.
+    repeat (rewrite block_ok_z in *).
+    repeat (rewrite block_ok_yz in *).
+    rewrite cons_cat.
+    assert (m1 + (m5 + m6 + m4) + n' = m1 + ((m5 + m6) + (m4 + n'))). {
+      clear.
+      rewrite Nat.add_comm.
+      repeat (rewrite Nat.add_assoc).
+      assert (m4 + n' = n' + m4). apply Nat.add_comm.
+      assert (n' + m1 + m5 + m6 + m4 = n' + (m1 + m5 + m6 + m4)). repeat (rewrite Nat.add_assoc). reflexivity.
+      rewrite H0. rewrite Nat.add_comm. rewrite <- Nat.add_assoc. rewrite H. reflexivity.
+    } rewrite H. clear H.
+    repeat (rewrite map_cat).
+    apply cat_count. apply H1.
+    apply cat_count.
+    apply cat_count. apply H2. apply H3.
+    apply IHdx. split. apply H4. apply H0.
+Qed.
+
+Proposition warp_correct_block :
+  forall x y z idx idy idz i n f,
+  let b := block (x,y,z) (idx,idy,idz) (build_block (x,y,z) (idx,idy,idz)) in
+  let b' := block (lesser_multiple x Warp_size,y,z) (idx,idy,idz) (build_block (lesser_multiple x Warp_size,y,z) (idx,idy,idz)) in
+  Warp_size <> 0 ->
+  count i (physical_thread_set (warps b f)) n ->
+  count i (map f (thread_set' b')) n.
+Proof.
+  intros. assert (H':exists k, x = k*Warp_size + (x mod Warp_size)). apply multiple.
+  destruct H' as [k H']. simpl in *.  clear b. clear b'.
+  rewrite H' in *. clear H'. 
+  generalize dependent n. induction k.
+  - intros. destruct (x mod Warp_size) eqn:E.
+    + subst; simpl in *. rewrite lesser_multiple_0 in H0.
+      rewrite Nat.Div0.div_0_l in H0. simpl in H0. rewrite lesser_multiple_0.
+      apply H0.
+    + simpl in *. subst.
+      assert (x mod Warp_size < Warp_size). apply Nat.mod_upper_bound. apply H.
+      rewrite E in H1.
+      assert (lesser_multiple (0*Warp_size + (S n0)) Warp_size = Warp_size).
+      rewrite lesser_multiple_is_a_multiple. rewrite Nat.mul_1_l. reflexivity.
+      apply H1. apply le_n_S. apply le_0_n.
+      simpl in H2. rewrite H2 in *. rewrite Nat.div_same in *.
+      simpl in *. rewrite cat_empty in *.
+      apply transpose_lemma'2 in H0.
+      apply transpose_lemma in H0.
+      clear E. clear H1. clear H2.
+      clear n0. clear H.
+      assert (forall T f, map f (B := T)
+     (thread_set_3xyz Warp_size y z (fun x : ThreadId_t => x :: [])
+        (fun i0 j k : nat => (idx, idy, idz, (i0, j, k)))) = (zip
+          (buildList Warp_size
+             (fun i : nat =>
+              zip
+                (buildList y
+                   (fun j : nat =>
+                    buildList z
+                      (fun j0 : nat =>
+                       f (idx, idy, idz, (i, j, j0))))))))). {
+          clear H0.
+          generalize dependent y.
+          generalize dependent z.
+          induction Warp_size.
+          - intros. reflexivity.
+          - intros. simpl in *.
+            destruct y,z.
+            + simpl in *. clear. induction n0. reflexivity. apply IHn0.
+            + simpl in *. clear. induction n0. reflexivity. apply IHn0.
+            + simpl in *. clear. assert (forall T, zip (buildList y (fun _ : nat => Nil T)) = []).
+            induction y. reflexivity. apply IHy.  rewrite H.  induction n0. reflexivity. apply IHn0.
+            + simpl in *.
+            rewrite block_ok_z.
+            rewrite block_ok_yz.
+            rewrite map_cat. rewrite map_cat.
+            rewrite map_buildlist.
+            assert (forall T f, map (B := T)
+            f
+            (zip
+               (buildList y
+                  (fun j : nat => buildList (S z) (fun k : nat => (idx, idy, idz, (n0, j, k)))))) =
+              zip
+            (buildList y
+               (fun j : nat =>
+                buildList (S z)
+                     (fun j0 : nat =>
+                      f (idx, idy, idz, (n0, j, j0)))))).
+                {
+                  intros. rewrite map_zip_buildlist. simpl.
+                  clear. induction y.
+                  reflexivity. simpl. rewrite map_buildlist. rewrite IHy. reflexivity.
+            }
+            rewrite H. clear H. simpl.
+            rewrite IHn0. reflexivity.
+      } rewrite H. simpl.
+      clear H. assert (lesser_multiple (1*Warp_size) Warp_size = 1*Warp_size). apply lesser_multiple_is_a_multiple1.
+      apply H0.
+      apply H.
+  - intros. simpl in *.
+    destruct (x mod Warp_size) eqn:E.
+    + simpl in *. rewrite Nat.add_0_r in *.
+      assert (lesser_multiple (S k * Warp_size) Warp_size = S k * Warp_size). apply lesser_multiple_is_a_multiple1.
+      simpl in H1. rewrite H1 in *. clear H1.
+      assert (lesser_multiple (k * Warp_size) Warp_size = k * Warp_size). apply lesser_multiple_is_a_multiple1.
+      simpl in H1. rewrite H1 in *. clear H1.
+      assert ((S k * Warp_size) / Warp_size = S k). apply Nat.div_mul. apply H.
+      simpl in H1. rewrite H1 in *. clear H1.
+      assert ((k * Warp_size) / Warp_size = k). apply Nat.div_mul. apply H.
+      simpl in H1. rewrite H1 in *. clear H1.
+      simpl in H0. apply cat_count_rev in H0.
+      destruct H0 as [m [m' [H0 [H1 H2]]]]. subst.
+      apply IHk in H1.
+      rewrite Nat.add_comm.
+      apply expand_block.
+      apply transpose_lemma'2 in H0.
+      apply transpose_lemma in H0.
+      split. rewrite block_ok_xyz.
+      assert (forall b, map f
+       (zip
+          (buildList Warp_size
+             (fun i0 : nat =>
+              zip
+                (buildList y
+                   (fun j : nat =>
+                    buildList z (fun k0 : nat => b i0 j k0))))))
+        = zip
+            (buildList Warp_size
+               (fun i : nat =>
+                zip
+                  (buildList y
+                     (fun j : nat =>
+                      buildList z (fun j0 : nat => f (b i j j0))))))).
+        {
+          clear. intros.
+          rewrite map_zip_buildlist.
+          induction Warp_size.
+          - reflexivity.
+          - simpl. rewrite IHn.
+          assert (map f (zip (buildList y (fun j : nat => buildList z (fun k0 : nat => b n j k0))))
+          = zip (buildList y (fun j : nat => buildList z (fun j0 : nat => f (b n j j0))))).
+            {
+              clear.
+              rewrite map_zip_buildlist.
+              induction y. reflexivity.
+              simpl. rewrite IHy.
+              rewrite map_buildlist. reflexivity.
+            }
+          rewrite H. reflexivity.
+        }
+        rewrite H2. apply H0.
+        apply H1.
+    + simpl in *. assert (x mod Warp_size < Warp_size). apply Nat.mod_upper_bound. apply H.
+      rewrite E in H1.
+      assert (lesser_multiple (S k * Warp_size + S n0) Warp_size = S (S k) * Warp_size). apply lesser_multiple_is_a_multiple.
+      apply H1. apply le_n_S. apply le_0_n.
+      simpl in H2. rewrite H2 in *. clear H2.
+      assert (lesser_multiple (k * Warp_size + S n0) Warp_size = S k * Warp_size). apply lesser_multiple_is_a_multiple.
+      apply H1. apply le_n_S. apply le_0_n.
+      simpl in H2. rewrite H2 in *. clear H2.
+      assert ((S (S k) * Warp_size) / Warp_size = S (S k)). apply Nat.div_mul. apply H.
+      simpl in H2. rewrite H2 in *. clear H2.
+      assert ((S k * Warp_size) / Warp_size = S k). apply Nat.div_mul. apply H.
+      simpl in H2. rewrite H2 in *. clear H2.
+      clear H1. clear E. clear n0.
+      simpl in H0. apply cat_count_rev in H0.
+      destruct H0 as [m [m' [H0 [H1 H2]]]]. subst.
+      apply IHk in H1.
+      assert (Warp_size + (Warp_size + k * Warp_size) = (S k * Warp_size) + Warp_size).
+        rewrite Nat.add_comm. reflexivity.
+        rewrite H2. clear H2.
+      apply expand_block.
+      apply transpose_lemma'2 in H0.
+      apply transpose_lemma in H0.
+      split. rewrite block_ok_xyz.
+      assert (forall b, map f
+       (zip
+          (buildList Warp_size
+             (fun i0 : nat =>
+              zip
+                (buildList y
+                   (fun j : nat =>
+                    buildList z (fun k0 : nat => b i0 j k0))))))
+        = zip
+            (buildList Warp_size
+               (fun i : nat =>
+                zip
+                  (buildList y
+                     (fun j : nat =>
+                      buildList z (fun j0 : nat => f (b i j j0))))))).
+        {
+          clear. intros.
+          rewrite map_zip_buildlist.
+          induction Warp_size.
+          - reflexivity.
+          - simpl. rewrite IHn.
+          assert (map f (zip (buildList y (fun j : nat => buildList z (fun k0 : nat => b n j k0))))
+          = zip (buildList y (fun j : nat => buildList z (fun j0 : nat => f (b n j j0))))).
+            {
+              clear.
+              rewrite map_zip_buildlist.
+              induction y. reflexivity.
+              simpl. rewrite IHy.
+              rewrite map_buildlist. reflexivity.
+            }
+          rewrite H. reflexivity.
+        }
+        rewrite H2. apply H0.
+        apply H1.
+Qed.
+
+Proposition warp_correct_grid :
+  forall x y z x' y' z' i n f,
+  let g := grid (x,y,z) (x',y',z') (build_grid (x,y,z) (x',y',z')) in
+  let g' := grid (x,y,z) (lesser_multiple x' Warp_size,y',z') (build_grid (x,y,z) (lesser_multiple x' Warp_size,y',z')) in
+  Warp_size <> 0 ->
+  count i (physical_thread_set (warps g f)) n ->
+  count i (map f (thread_set' g')) n.
+Proof.
+  induction x.
+  - intros. apply H0.
+  - intros. simpl in *.
+    clear g. clear g'.
+    destruct y,z.
+      + simpl in *. clear IHx. clear f. clear H.
+        induction x. apply H0. apply IHx. apply H0.
+      + simpl in *. clear IHx. clear f. clear H.
+        induction x. apply H0. apply IHx. apply H0.
+      + simpl in *. clear IHx. clear f. clear H.
+        assert (forall T, zip (T := T) (buildList y (fun _ : nat => [])) = []).
+            clear. induction y. reflexivity. apply IHy.
+        rewrite H in H0. induction x. apply H0. apply IHx. apply H0.
+      + apply cat_count_rev in H0.
+        destruct H0 as [m [m' [H0 [H1 H2]]]]. subst.
+        apply IHx in H1. clear IHx.
+        repeat (rewrite map_cat).
+        apply cat_count.
+          * clear H1.
+            rewrite grid_ok_z.
+            rewrite grid_ok_yz.
+            simpl in H0.
+            apply cat_count_rev in H0.
+            destruct H0 as [m1 [m2 [H0 [H2 H']]]]. subst.
+            apply cat_count_rev in H0.
+            destruct H0 as [m3 [m4 [H0 [H1 H']]]]. subst.
+            apply cat_count. apply cat_count.
+            ++  apply warp_correct_block.
+              apply H.
+              apply H0.
+            ++  clear H0.
+                rewrite map_zip_buildlist.
+                clear H2.
+                generalize dependent m4. induction z.
+                --  intros. apply H1.
+                --  intros. simpl in H1.
+                    apply cat_count_rev in H1.
+                    destruct H1 as [m1' [m2' [H1 [H2 H']]]]. subst.
+                    simpl. apply cat_count. apply warp_correct_block. apply H. apply H1.
+                    apply IHz. apply H2.
+            ++  clear H1. clear H0. 
+                rewrite map_zip_buildlist.
+                generalize dependent m2. induction y.
+                -- intros. apply H2.
+                -- intros. simpl in H2.
+                    apply cat_count_rev in H2.
+                    destruct H2 as [m1' [m2' [H2 [H3 H']]]]. subst.
+                    apply cat_count.
+                      clear IHy. clear H3. simpl in *.
+                      apply cat_count_rev in H2.
+                      destruct H2 as [m3' [m4' [H2 [H3 H']]]]. subst.
+                      rewrite map_cat. apply cat_count.
+                      apply warp_correct_block. apply H. apply H2.
+                      clear H2. generalize dependent m4'.
+                      induction z.
+                          intros. apply H3.
+                          intros. simpl in *.
+                          apply cat_count_rev in H3.
+                          destruct H3 as [m1'' [m2'' [H3 [H4 H']]]]. subst.
+                          rewrite map_cat. apply cat_count. apply warp_correct_block. apply H. apply H3.
+                          apply IHz. apply H4.
+                     apply IHy. apply H3.
+        * apply H1.
+        * apply H.
+Qed.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
