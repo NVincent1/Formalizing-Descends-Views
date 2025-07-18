@@ -1,11 +1,10 @@
 
 From Views Require Import utils.
-From Views Require Import Execution_resources.
-From Views Require Import Execution_resources_blocks.
-From Views Require Import Execution_resources_grids.
-From Views Require Import Execution_resources_lemmas.
-From Views Require Import Execution_resources_functions_correctness_lemmas.
-From Views Require Import Execution_resources_functions_correctness.
+From Views.Execution_resources Require Import Execution_resources.
+From Views.Execution_resources Require Import blocks.
+From Views.Execution_resources Require Import grids.
+From Views.Execution_resources Require Import lemmas.
+From Views.Execution_resources Require Import correctness_lemmas.
 Require Import PeanoNat.
 
 Lemma next_multiple_unchange_multiple :
@@ -130,11 +129,11 @@ Proof.
 Qed.
 
 Proposition warp_correct_block :
-  forall x y z idx idy idz i n f,
+  forall x y z idx idy idz i n f f',
   let b := block (x,y,z) (idx,idy,idz) (build_block (x,y,z) (idx,idy,idz)) in
   let b' := block (next_multiple x Warp_size,y,z) (idx,idy,idz) (build_block (next_multiple x Warp_size,y,z) (idx,idy,idz)) in
   Warp_size <> 0 ->
-  count i (physical_thread_set (warps b f)) n ->
+  count i (physical_thread_set (warps b f) f') n ->
   count i (map f (thread_set' b')) n.
 Proof.
   intros. assert (H':exists k, x = k*Warp_size + (x mod Warp_size)). apply mod_decomposition.
@@ -319,11 +318,11 @@ Proof.
 Qed.
 
 Proposition warp_correct_grid :
-  forall x y z x' y' z' i n f,
+  forall x y z x' y' z' i n f f',
   let g := grid (x,y,z) (x',y',z') (build_grid (x,y,z) (x',y',z')) in
   let g' := grid (x,y,z) (next_multiple x' Warp_size,y',z') (build_grid (x,y,z) (next_multiple x' Warp_size,y',z')) in
   Warp_size <> 0 ->
-  count i (physical_thread_set (warps g f)) n ->
+  count i (physical_thread_set (warps g f) f') n ->
   count i (map f (thread_set' g')) n.
 Proof.
   induction x.
@@ -331,11 +330,11 @@ Proof.
   - intros. simpl in *.
     clear g. clear g'.
     destruct y,z.
-      + simpl in *. clear IHx. clear f. clear H.
+      + simpl in *. clear IHx. clear f. clear f'. clear H.
         induction x. apply H0. apply IHx. apply H0.
-      + simpl in *. clear IHx. clear f. clear H.
+      + simpl in *. clear IHx. clear f. clear f'. clear H.
         induction x. apply H0. apply IHx. apply H0.
-      + simpl in *. clear IHx. clear f. clear H.
+      + simpl in *. clear IHx. clear f. clear f'. clear H.
         assert (forall T, zip (T := T) (buildList y (fun _ : nat => [])) = []).
             clear. induction y. reflexivity. apply IHy.
         rewrite H in H0. induction x. apply H0. apply IHx. apply H0.
@@ -353,7 +352,7 @@ Proof.
             apply cat_count_rev in H0.
             destruct H0 as [m3 [m4 [H0 [H1 H']]]]. subst.
             apply cat_count. apply cat_count.
-            ++  apply warp_correct_block.
+            ++ apply warp_correct_block with (f' := f').
               apply H.
               apply H0.
             ++  clear H0.
@@ -364,7 +363,7 @@ Proof.
                 --  intros. simpl in H1.
                     apply cat_count_rev in H1.
                     destruct H1 as [m1' [m2' [H1 [H2 H']]]]. subst.
-                    simpl. apply cat_count. apply warp_correct_block. apply H. apply H1.
+                    simpl. apply cat_count. apply warp_correct_block with (f' := f'). apply H. apply H1.
                     apply IHz. apply H2.
             ++  clear H1. clear H0. 
                 rewrite map_zip_buildlist.
@@ -378,17 +377,18 @@ Proof.
                       apply cat_count_rev in H2.
                       destruct H2 as [m3' [m4' [H2 [H3 H']]]]. subst.
                       rewrite map_cat. apply cat_count.
-                      apply warp_correct_block. apply H. apply H2.
+                      apply warp_correct_block with (f' := f'). apply H. apply H2.
                       clear H2. generalize dependent m4'.
                       induction z.
                           intros. apply H3.
                           intros. simpl in *.
                           apply cat_count_rev in H3.
                           destruct H3 as [m1'' [m2'' [H3 [H4 H']]]]. subst.
-                          rewrite map_cat. apply cat_count. apply warp_correct_block. apply H. apply H3.
+                          rewrite map_cat. apply cat_count. apply warp_correct_block with (f' := f'). apply H. apply H3.
                           apply IHz. apply H4.
                      apply IHy. apply H3.
         * apply H1.
+        * apply f.
         * apply H.
 Qed.
 

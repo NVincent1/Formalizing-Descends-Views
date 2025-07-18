@@ -1,6 +1,6 @@
 
 From Views Require Import utils.
-From Views Require Import Execution_resources.
+From Views.Execution_resources Require Import Execution_resources.
 Require Import PeanoNat.
 
 
@@ -70,9 +70,10 @@ Fixpoint thread_set' (e : execution_resource) : List ThreadId_t :=
   | _ => []
 end.
 
-Fixpoint physical_thread_set (e : execution_resource) : List PhysicalId_t :=
+(** TODO : add physical address translation of blocks, grids and lthreads *)
+Fixpoint physical_thread_set (e : execution_resource) (f : ThreadId_t -> PhysicalId_t) : List PhysicalId_t :=
   match e with
-  | Collection n v => zip (buildList n (fun i => physical_thread_set (v i)))
+  | Collection n v => zip (buildList n (fun i => physical_thread_set (v i) f))
   | thread i => i::[]
   | warp w => buildList Warp_size (fun i => w i)
   | _ => []

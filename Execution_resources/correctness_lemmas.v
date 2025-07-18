@@ -1,7 +1,7 @@
 
 From Views Require Import utils.
-From Views Require Import Execution_resources.
-From Views Require Import Execution_resources_lemmas.
+From Views.Execution_resources Require Import Execution_resources.
+From Views.Execution_resources Require Import lemmas.
 Require Import PeanoNat.
 
 Axiom FunEquality :
@@ -804,11 +804,11 @@ Proof.
 Qed.
 
 Proposition collection_ok_physical :
-  forall i n v n0 d,
-(forall n' n0, n' < n -> count i (physical_thread_set (v n')) n0 ->
-    count i (physical_thread_set (for_all (v n') d)) n0) ->
-  count i (zip (buildList n (fun i : nat => physical_thread_set (v i)))) n0
--> count i (zip (buildList n (fun i0 : nat => physical_thread_set (for_all (v i0) d))))
+  forall i n v n0 d f,
+(forall n' n0, n' < n -> count i (physical_thread_set (v n') f) n0 ->
+    count i (physical_thread_set (for_all (v n') d) f) n0) ->
+  count i (zip (buildList n (fun i : nat => physical_thread_set (v i) f))) n0
+-> count i (zip (buildList n (fun i0 : nat => physical_thread_set (for_all (v i0) d) f)))
   n0.
 Proof.
   induction n.

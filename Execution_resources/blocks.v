@@ -1,7 +1,7 @@
 
 From Views Require Import utils.
-From Views Require Import Execution_resources.
-From Views Require Import Execution_resources_lemmas.
+From Views.Execution_resources Require Import Execution_resources.
+From Views.Execution_resources Require Import lemmas.
 Require Import PeanoNat.
 
 Proposition block_not_contain_larger_on_z :

@@ -1,8 +1,8 @@
 
 From Views Require Import utils.
-From Views Require Import Execution_resources.
-From Views Require Import Execution_resources_lemmas.
-From Views Require Import Execution_resources_blocks.
+From Views.Execution_resources Require Import Execution_resources.
+From Views.Execution_resources Require Import lemmas.
+From Views.Execution_resources Require Import blocks.
 Require Import PeanoNat.
 
 
