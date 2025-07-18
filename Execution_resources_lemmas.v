@@ -239,6 +239,12 @@ Proof.
       + subst. exists (S x0). apply cons_eq. apply H.
       + exists x0. apply cons_neq. apply H. apply H0.
 Qed.
+Lemma cons_cat :
+  forall T (x:T) l,
+    x::l = (x :: [])++l.
+Proof.
+  reflexivity.
+Qed.
 
 Proposition count_impl_equiv :
   forall T (x : T) l1 l2,
