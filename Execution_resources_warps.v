@@ -8,23 +8,23 @@ From Views Require Import Execution_resources_functions_correctness_lemmas.
 From Views Require Import Execution_resources_functions_correctness.
 Require Import PeanoNat.
 
-Lemma lesser_multiple_is_a_multiple1 :
+Lemma next_multiple_is_a_multiple1 :
   forall n m,
-  lesser_multiple (n*m) m = n*m.
+  next_multiple (n*m) m = n*m.
 Proof.
   destruct n.
-  - intro. simpl. unfold lesser_multiple. rewrite Nat.Div0.mod_0_l. reflexivity.
+  - intro. simpl. unfold next_multiple. rewrite Nat.Div0.mod_0_l. reflexivity.
   - destruct m. rewrite Nat.mul_0_r. reflexivity.
-    unfold lesser_multiple. rewrite Nat.Div0.mod_mul. reflexivity.
+    unfold next_multiple. rewrite Nat.Div0.mod_mul. reflexivity.
 Qed.
 
-Lemma lesser_multiple_aux_is_a_multiple :
+Lemma next_multiple_aux_is_a_multiple :
   forall n k m,
     k < m ->
-  lesser_multiple_aux (n*m+k) m = n*m.
+  next_multiple_aux (n*m+k) m = n*m.
 Proof.
   destruct n.
-  - intros. simpl. unfold lesser_multiple_aux.
+  - intros. simpl. unfold next_multiple_aux.
     induction k.
     + reflexivity.
     + assert (S k mod m = S k). apply Nat.mod_small. apply H.
@@ -43,19 +43,19 @@ Proof.
       rewrite H0. apply IHk. apply le_S. apply le_S_n. apply H.
 Qed.
 
-Lemma lesser_multiple_is_a_multiple :
+Lemma next_multiple_is_a_multiple :
   forall n k m,
     k < m -> k > 0 ->
-  lesser_multiple (n*m+k) m = (S n)*m.
+  next_multiple (n*m+k) m = (S n)*m.
 Proof.
   destruct k.
   - intros. inversion H0.
-  - intros. unfold lesser_multiple.
+  - intros. unfold next_multiple.
   assert ((n * m + S k) mod m = S k). rewrite Nat.Div0.add_mod. rewrite Nat.Div0.mod_mul.
     rewrite Nat.mod_small. rewrite Nat.mod_small. reflexivity. apply H.  rewrite Nat.mod_small; apply H.
     rewrite H1. assert (n * m + S k + m = (S n) * m + S k). simpl. rewrite Nat.add_comm.
     rewrite Nat.add_assoc. reflexivity. rewrite H2.
-    apply lesser_multiple_aux_is_a_multiple. apply H.
+    apply next_multiple_aux_is_a_multiple. apply H.
 Qed.
 
 Lemma multiple :
@@ -68,22 +68,22 @@ Proof.
   rewrite Nat.mul_comm. apply Nat.Div0.div_mod.
 Qed.
 
-Lemma lesser_multiple_0 :
+Lemma next_multiple_0 :
   forall m,
-  lesser_multiple 0 m = 0.
+  next_multiple 0 m = 0.
 Proof.
   intros.
-  unfold lesser_multiple. rewrite Nat.Div0.mod_0_l. reflexivity.
+  unfold next_multiple. rewrite Nat.Div0.mod_0_l. reflexivity.
 Qed.
 
-Lemma lesser_multiple_1 :
+Lemma next_multiple_1 :
   forall n,
-  lesser_multiple n 1 = n.
+  next_multiple n 1 = n.
 Proof.
   intros.
-  assert (lesser_multiple n 1 = lesser_multiple (n*1) 1).
+  assert (next_multiple n 1 = next_multiple (n*1) 1).
     rewrite Nat.mul_1_r. reflexivity.
-  rewrite H. rewrite lesser_multiple_is_a_multiple1.
+  rewrite H. rewrite next_multiple_is_a_multiple1.
   rewrite Nat.mul_1_r. reflexivity.
 Qed.
 
@@ -132,7 +132,7 @@ Qed.
 Proposition warp_correct_block :
   forall x y z idx idy idz i n f,
   let b := block (x,y,z) (idx,idy,idz) (build_block (x,y,z) (idx,idy,idz)) in
-  let b' := block (lesser_multiple x Warp_size,y,z) (idx,idy,idz) (build_block (lesser_multiple x Warp_size,y,z) (idx,idy,idz)) in
+  let b' := block (next_multiple x Warp_size,y,z) (idx,idy,idz) (build_block (next_multiple x Warp_size,y,z) (idx,idy,idz)) in
   Warp_size <> 0 ->
   count i (physical_thread_set (warps b f)) n ->
   count i (map f (thread_set' b')) n.
@@ -142,14 +142,14 @@ Proof.
   rewrite H' in *. clear H'. 
   generalize dependent n. induction k.
   - intros. destruct (x mod Warp_size) eqn:E.
-    + subst; simpl in *. rewrite lesser_multiple_0 in H0.
-      rewrite Nat.Div0.div_0_l in H0. simpl in H0. rewrite lesser_multiple_0.
+    + subst; simpl in *. rewrite next_multiple_0 in H0.
+      rewrite Nat.Div0.div_0_l in H0. simpl in H0. rewrite next_multiple_0.
       apply H0.
     + simpl in *. subst.
       assert (x mod Warp_size < Warp_size). apply Nat.mod_upper_bound. apply H.
       rewrite E in H1.
-      assert (lesser_multiple (0*Warp_size + (S n0)) Warp_size = Warp_size).
-      rewrite lesser_multiple_is_a_multiple. rewrite Nat.mul_1_l. reflexivity.
+      assert (next_multiple (0*Warp_size + (S n0)) Warp_size = Warp_size).
+      rewrite next_multiple_is_a_multiple. rewrite Nat.mul_1_l. reflexivity.
       apply H1. apply le_n_S. apply le_0_n.
       simpl in H2. rewrite H2 in *. rewrite Nat.div_same in *.
       simpl in *. rewrite cat_empty in *.
@@ -203,15 +203,15 @@ Proof.
             rewrite H. clear H. simpl.
             rewrite IHn0. reflexivity.
       } rewrite H. simpl.
-      clear H. assert (lesser_multiple (1*Warp_size) Warp_size = 1*Warp_size). apply lesser_multiple_is_a_multiple1.
+      clear H. assert (next_multiple (1*Warp_size) Warp_size = 1*Warp_size). apply next_multiple_is_a_multiple1.
       apply H0.
       apply H.
   - intros. simpl in *.
     destruct (x mod Warp_size) eqn:E.
     + simpl in *. rewrite Nat.add_0_r in *.
-      assert (lesser_multiple (S k * Warp_size) Warp_size = S k * Warp_size). apply lesser_multiple_is_a_multiple1.
+      assert (next_multiple (S k * Warp_size) Warp_size = S k * Warp_size). apply next_multiple_is_a_multiple1.
       simpl in H1. rewrite H1 in *. clear H1.
-      assert (lesser_multiple (k * Warp_size) Warp_size = k * Warp_size). apply lesser_multiple_is_a_multiple1.
+      assert (next_multiple (k * Warp_size) Warp_size = k * Warp_size). apply next_multiple_is_a_multiple1.
       simpl in H1. rewrite H1 in *. clear H1.
       assert ((S k * Warp_size) / Warp_size = S k). apply Nat.div_mul. apply H.
       simpl in H1. rewrite H1 in *. clear H1.
@@ -261,10 +261,10 @@ Proof.
         apply H1.
     + simpl in *. assert (x mod Warp_size < Warp_size). apply Nat.mod_upper_bound. apply H.
       rewrite E in H1.
-      assert (lesser_multiple (S k * Warp_size + S n0) Warp_size = S (S k) * Warp_size). apply lesser_multiple_is_a_multiple.
+      assert (next_multiple (S k * Warp_size + S n0) Warp_size = S (S k) * Warp_size). apply next_multiple_is_a_multiple.
       apply H1. apply le_n_S. apply le_0_n.
       simpl in H2. rewrite H2 in *. clear H2.
-      assert (lesser_multiple (k * Warp_size + S n0) Warp_size = S k * Warp_size). apply lesser_multiple_is_a_multiple.
+      assert (next_multiple (k * Warp_size + S n0) Warp_size = S k * Warp_size). apply next_multiple_is_a_multiple.
       apply H1. apply le_n_S. apply le_0_n.
       simpl in H2. rewrite H2 in *. clear H2.
       assert ((S (S k) * Warp_size) / Warp_size = S (S k)). apply Nat.div_mul. apply H.
@@ -321,7 +321,7 @@ Qed.
 Proposition warp_correct_grid :
   forall x y z x' y' z' i n f,
   let g := grid (x,y,z) (x',y',z') (build_grid (x,y,z) (x',y',z')) in
-  let g' := grid (x,y,z) (lesser_multiple x' Warp_size,y',z') (build_grid (x,y,z) (lesser_multiple x' Warp_size,y',z')) in
+  let g' := grid (x,y,z) (next_multiple x' Warp_size,y',z') (build_grid (x,y,z) (next_multiple x' Warp_size,y',z')) in
   Warp_size <> 0 ->
   count i (physical_thread_set (warps g f)) n ->
   count i (map f (thread_set' g')) n.

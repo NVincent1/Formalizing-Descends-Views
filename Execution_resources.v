@@ -198,32 +198,32 @@ Fixpoint get_physical_id_aux (shp : shape) (x' y' z' : nat) : ThreadId_t -> Phys
     i*x'+i' + x*x'*(j*y'+j') + x*y*x'*y'*(k*z'+k')
 end.
 
-Fixpoint lesser_multiple_aux (n : nat) (m : nat) :=
+Fixpoint next_multiple_aux (n : nat) (m : nat) :=
   match n with
   | 0 => 0
   | S n => match (S n mod m) with
            | 0 => S n
-           | _ => lesser_multiple_aux n m
+           | _ => next_multiple_aux n m
 end
 end.
 
-Definition lesser_multiple (n : nat) (m : nat) :=
+Definition next_multiple (n : nat) (m : nat) :=
   match (n mod m) with
   | 0 => n
-  | _ => lesser_multiple_aux (n + m) m
+  | _ => next_multiple_aux (n + m) m
 end.
 
 Definition get_physical_id (shp : shape) (shp' : shape) : ThreadId_t -> PhysicalId_t :=
   fun id =>
   match shp,shp',id with
   | (x,y,z),(x',y',z'),((i,j,k),(i',j',k')) =>
-    let w := lesser_multiple x' Warp_size in
+    let w := next_multiple x' Warp_size in
     i*w+i' + x*w*(j*y'+j') + x*y*w*y'*(k*z'+k')
 end.
 
 Definition warp_aux (shp : shape) (id : shape) (b : Block_t shp) (f : ThreadId_t -> PhysicalId_t) :=
   match shp,id with
-  | (x,y,z),(idx,idy,idz) => Collection ((lesser_multiple x Warp_size)/Warp_size) (fun i => Collection y (fun j => Collection z (fun k =>  warp (fun i' => f ((idx,idy,idz),(i*Warp_size+i',j,k))))))
+  | (x,y,z),(idx,idy,idz) => Collection ((next_multiple x Warp_size)/Warp_size) (fun i => Collection y (fun j => Collection z (fun k =>  warp (fun i' => f ((idx,idy,idz),(i*Warp_size+i',j,k))))))
 end.
 
 Fixpoint warps (e : execution_resource) (f : ThreadId_t -> PhysicalId_t) : execution_resource :=
