@@ -8,7 +8,7 @@ From Views Require Import Execution_resources_functions_correctness_lemmas.
 From Views Require Import Execution_resources_functions_correctness.
 Require Import PeanoNat.
 
-Lemma next_multiple_is_a_multiple1 :
+Lemma next_multiple_unchange_multiple :
   forall n m,
   next_multiple (n*m) m = n*m.
 Proof.
@@ -58,7 +58,7 @@ Proof.
     apply next_multiple_aux_is_a_multiple. apply H.
 Qed.
 
-Lemma multiple :
+Lemma mod_decomposition :
   forall m n,
   exists k, n = k*m + (n mod m)
 .
@@ -83,7 +83,7 @@ Proof.
   intros.
   assert (next_multiple n 1 = next_multiple (n*1) 1).
     rewrite Nat.mul_1_r. reflexivity.
-  rewrite H. rewrite next_multiple_is_a_multiple1.
+  rewrite H. rewrite next_multiple_unchange_multiple.
   rewrite Nat.mul_1_r. reflexivity.
 Qed.
 
@@ -137,7 +137,7 @@ Proposition warp_correct_block :
   count i (physical_thread_set (warps b f)) n ->
   count i (map f (thread_set' b')) n.
 Proof.
-  intros. assert (H':exists k, x = k*Warp_size + (x mod Warp_size)). apply multiple.
+  intros. assert (H':exists k, x = k*Warp_size + (x mod Warp_size)). apply mod_decomposition.
   destruct H' as [k H']. simpl in *.  clear b. clear b'.
   rewrite H' in *. clear H'. 
   generalize dependent n. induction k.
@@ -203,15 +203,15 @@ Proof.
             rewrite H. clear H. simpl.
             rewrite IHn0. reflexivity.
       } rewrite H. simpl.
-      clear H. assert (next_multiple (1*Warp_size) Warp_size = 1*Warp_size). apply next_multiple_is_a_multiple1.
+      clear H. assert (next_multiple (1*Warp_size) Warp_size = 1*Warp_size). apply next_multiple_unchange_multiple.
       apply H0.
       apply H.
   - intros. simpl in *.
     destruct (x mod Warp_size) eqn:E.
     + simpl in *. rewrite Nat.add_0_r in *.
-      assert (next_multiple (S k * Warp_size) Warp_size = S k * Warp_size). apply next_multiple_is_a_multiple1.
+      assert (next_multiple (S k * Warp_size) Warp_size = S k * Warp_size). apply next_multiple_unchange_multiple.
       simpl in H1. rewrite H1 in *. clear H1.
-      assert (next_multiple (k * Warp_size) Warp_size = k * Warp_size). apply next_multiple_is_a_multiple1.
+      assert (next_multiple (k * Warp_size) Warp_size = k * Warp_size). apply next_multiple_unchange_multiple.
       simpl in H1. rewrite H1 in *. clear H1.
       assert ((S k * Warp_size) / Warp_size = S k). apply Nat.div_mul. apply H.
       simpl in H1. rewrite H1 in *. clear H1.
