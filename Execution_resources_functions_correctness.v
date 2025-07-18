@@ -7,7 +7,7 @@ Require Import PeanoNat.
 
 Fixpoint forall_no_error (e : execution_resource) (d : dimension) : Prop :=
   match e with
-  | Collection n v => forall i, (forall_no_error (v i) d)
+  | Collection n v => forall i, i < n -> (forall_no_error (v i) d)
   | _ => for_all e d <> Error
 end.
 
@@ -276,8 +276,8 @@ Proof.
   - simpl in *.
     apply collection_ok.
     intros.
-    apply H with (n := n0) (m := n1).
-    apply H0. apply H2. apply H1.
+    apply H with (m := n0).
+    apply H0. apply H2. apply H3. apply H1.
 Qed.
 
 Proposition for_all_error :
@@ -434,8 +434,9 @@ Proof.
       * destruct z. destruct y; apply H0. clear H. destruct y; simpl; clear g; induction z; try apply H0; apply IHz.
       * destruct z. destruct x; apply H0. clear H. destruct x; simpl; clear g; induction z; try apply H0; apply IHz.
       * destruct z. destruct x,y; apply H0. clear H. destruct x,y; simpl; clear g; induction z; try apply H0; apply IHz.
-  - apply collection_ok_physical. intros. apply H with (n := n0) (m := n1) in H0.
-    apply H0. apply H2. apply H1.
+  - apply collection_ok_physical. intros.
+    apply H with (n := n') (m := n0) in H0.
+    apply H0. apply H2. apply H3. apply H1.
 Qed.
 
 Proposition select_correct :

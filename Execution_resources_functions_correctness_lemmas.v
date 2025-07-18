@@ -786,8 +786,8 @@ Qed.
 
 Proposition collection_ok :
   forall i n v n0 d,
-(forall n n0, count i (thread_set' (v n)) n0 ->
-    count i (thread_set' (for_all (v n) d)) n0) ->
+(forall n' n0, n' < n -> count i (thread_set' (v n')) n0 ->
+    count i (thread_set' (for_all (v n') d)) n0) ->
   count i (zip (buildList n (fun i : nat => thread_set' (v i)))) n0
 -> count i (zip (buildList n (fun i0 : nat => thread_set' (for_all (v i0) d))))
   n0.
@@ -798,15 +798,15 @@ Proof.
   apply cat_count_rev in H0.
   destruct H0 as [m [m' [H0 [H1 H2]]]]. subst.
   apply cat_count.
-  apply H. apply H0.
-  apply IHn. apply H.
+  apply H. apply le_n. apply H0.
+  apply IHn. intros. apply le_S in H2. apply H with (n0 := n0) in H2. apply H2. apply H3.
   apply H1.
 Qed.
 
 Proposition collection_ok_physical :
   forall i n v n0 d,
-(forall n n0, count i (physical_thread_set (v n)) n0 ->
-    count i (physical_thread_set (for_all (v n) d)) n0) ->
+(forall n' n0, n' < n -> count i (physical_thread_set (v n')) n0 ->
+    count i (physical_thread_set (for_all (v n') d)) n0) ->
   count i (zip (buildList n (fun i : nat => physical_thread_set (v i)))) n0
 -> count i (zip (buildList n (fun i0 : nat => physical_thread_set (for_all (v i0) d))))
   n0.
@@ -817,8 +817,8 @@ Proof.
   apply cat_count_rev in H0.
   destruct H0 as [m [m' [H0 [H1 H2]]]]. subst.
   apply cat_count.
-  apply H. apply H0.
-  apply IHn. apply H.
+  apply H. apply le_n. apply H0.
+  apply IHn. intros. apply le_S in H2. apply H with (n0 := n0) in H2. apply H2. apply H3.
   apply H1.
 Qed.
 

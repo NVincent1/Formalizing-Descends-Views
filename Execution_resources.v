@@ -234,14 +234,6 @@ Fixpoint warps (e : execution_resource) (f : ThreadId_t -> PhysicalId_t) : execu
   | _ => Error
 end.
 
-Fixpoint maptranslate (f : ThreadId_t -> PhysicalId_t) (l : List execution_resource) : List execution_resource :=
-  match l with
-  | [] => []
-  | h :: tl => match h with
-               | lthread i => thread (f i)::(maptranslate f tl)
-               | _ => h::(maptranslate f tl)
-end end.
-
 Fixpoint translate (e : execution_resource) (f : ThreadId_t -> PhysicalId_t) : execution_resource :=
   match e with
   | Collection n v => Collection n (fun x => translate (v x) f)
