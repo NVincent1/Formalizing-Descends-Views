@@ -17,7 +17,7 @@ Proof.
   intros. induction x. reflexivity. simpl. rewrite H. apply IHx.
 Qed.
 
-
+(** Rewriting thread_set with buildList *)
 Lemma block_ok_z :
 forall b x y z,
 thread_set_1z (S x) (S y) z (fun x0 : ThreadId_t => x0 :: []) b =
@@ -269,6 +269,8 @@ Proof.
   intros. split; rewrite zip_ok; intro H; apply H.
 Qed.
 
+(** Transpositions (changing the order in which we consider the dimensions) *)
+
 Lemma transpose_lemma :
 forall T (a:T) x y n f,
 count a (zip (buildList y (fun j => (zip (buildList x (fun i => f i j)))))) n ->
@@ -419,435 +421,6 @@ Proof.
   + intro. apply transpose_lemma'. apply transpose_lemma. apply H.
 Qed.
 
-Lemma forall_block_x :
-  forall x y z i n b, count i (thread_set_3xyz x y z (fun x : ThreadId_t => x :: []) b) n ->
-            count i (zip (buildList x (fun i0 : nat => thread_set_3xyz 1 y z (fun x0 : ThreadId_t => x0 :: [])
-                    (fun _ j k : nat => b i0 j k)))) n.
-Proof.
-  intros.
-  generalize dependent n. induction x; intros. destruct y; apply H.
-  simpl in *. destruct y,z.
-    simpl in *. rewrite blockempty. apply H. reflexivity.
-    simpl in *. rewrite blockempty. apply H. reflexivity.
-    simpl in *. rewrite blockempty. apply H. reflexivity.
-    simpl in *. apply cat_count_rev with (l1 := b x y z
-    :: (thread_set_1z (S x) (S y) z (fun x : ThreadId_t => x :: []) b) ++
-    thread_set_2yz (S x) y (S z) (fun x : ThreadId_t => x :: []) b) in H.
-    destruct H as [m1 [m2 [H [H' H2]]]]. subst.
-    apply cat_count with (l1 := b x y z
-        :: ((thread_set_1z 1 (S y) z (fun x0 : ThreadId_t => x0 :: []) (fun _ j k : nat => b x j k) ++
-        thread_set_2yz 1 y (S z) (fun x0 : ThreadId_t => x0 :: []) (fun _ j k : nat => b x j k)) ++ [])).
-    rewrite block_ok_yz.
-    rewrite block_ok_yz in H.
-    apply cat_count_rev with (l1 := b x y z
-    :: thread_set_1z (S x) (S y) z (fun x : ThreadId_t => x :: []) b) in H.
-    destruct H as [m1' [m2' [H [H1 H2]]]]. subst.
-    rewrite cat_empty.
-    apply cat_count with (l1 := b x y z
-    :: thread_set_1z 1 (S y) z (fun x0 : ThreadId_t => x0 :: []) (fun _ j k : nat => b x j k)).
-    rewrite block_ok_z. rewrite block_ok_z in H.
-    apply H.
-    simpl.
-    clear H. clear H'. clear IHx. generalize dependent m2'. induction y.
-        intros. apply H1. simpl. intros.
-        apply cat_count_rev with (l1 := b x y z
-        :: buildList z (fun k : nat => b x y k)) in H1.
-        destruct H1 as [m [m' [H1 [H2 H3]]]]. subst.
-        apply cat_count with (l1 := b x y z
-        :: buildList z (fun k : nat => b x y k)).
-        apply H1. apply IHy. apply H2.
-    apply IHx in H'.
-    apply H'.
-Qed.
-
-Lemma forall_block_y :
-  forall x y z i n b, count i (thread_set_3xyz x y z (fun x : ThreadId_t => x :: []) b) n ->
-            count i (zip (buildList y (fun i0 : nat => thread_set_3xyz x 1 z (fun x0 : ThreadId_t => x0 :: [])
-                    (fun i1 _ k : nat => b i1 i0 k)))) n.
-Proof.
-  intros. apply transpose_xy_block in H.
-  generalize dependent n. induction y; intros. destruct x; apply H.
-  simpl in *. destruct x,z.
-    simpl in *. rewrite blockempty. apply H. reflexivity.
-    simpl in *. rewrite blockempty. apply H. reflexivity.
-    simpl in *. rewrite blockempty. apply H. reflexivity.
-    simpl in *. apply cat_count_rev with (l1 := b x y z
-    :: (thread_set_1z (S x) (S y) z (fun x : ThreadId_t => x :: []) b) ++
-    thread_set_2xz x (S y) (S z) (fun x : ThreadId_t => x :: []) b) in H.
-    destruct H as [m1 [m2 [H [H' H2]]]]. subst.
-    apply cat_count with (l1 := b x y z
-    :: ((thread_set_1z (S x) 1 z (fun x0 : ThreadId_t => x0 :: []) (fun i1 _ k : nat => b i1 y k) ++ []) ++
-    thread_set_3xyz x 1 (S z) (fun x0 : ThreadId_t => x0 :: []) (fun i1 _ k : nat => b i1 y k))).
-    rewrite block_ok_xyz.
-    rewrite block_ok_xz in H.
-    apply cat_count_rev with (l1 := b x y z
-    :: thread_set_1z (S x) (S y) z (fun x : ThreadId_t => x :: []) b) in H.
-    destruct H as [m1' [m2' [H [H1 H2]]]]. subst.
-    rewrite cat_empty.
-    apply cat_count with (l1 := b x y z
-    :: thread_set_1z (S x) 1 z (fun x0 : ThreadId_t => x0 :: []) (fun i1 _ k : nat => b i1 y k)).
-    rewrite block_ok_z. rewrite block_ok_z in H.
-    apply H.
-    simpl.
-    assert (forall z, zip (buildList x (fun i0 : nat =>
-        zip (buildList 1 (fun _ : nat => buildList (S z) (fun k : nat => b i0 y k))))) =
-        zip (buildList x (fun j : nat => buildList (S z) (fun k : nat => b j y k)))).
-        clear. induction x.
-        reflexivity. simpl. intros.
-        simpl in IHx. rewrite IHx.
-        rewrite cat_empty. reflexivity.
-    simpl in H0.
-    rewrite H0. apply H1.
-    apply IHy in H'.
-    apply H'.
-Qed.
-
-Lemma forall_block_z :
-  forall x y z i n b, count i (thread_set_3xyz x y z (fun x : ThreadId_t => x :: []) b) n ->
-            count i (zip (buildList z
-           (fun i0 : nat => thread_set_3xyz x y 1 (fun x0 : ThreadId_t => x0 :: [])
-                    (fun i1 j k : nat => b i1 j i0)))) n.
-Proof.
-intros. apply transpose_xz_block in H.
-generalize dependent n. induction z; intros. destruct x,y; apply H.
-simpl in *. destruct x,y.
-  simpl in *. rewrite blockempty. apply H. reflexivity.
-  simpl in *. rewrite blockempty. apply H. reflexivity.
-  simpl in *. rewrite blockempty. apply H. reflexivity.
-  simpl in *. apply cat_count_rev with (l1 := b x y z
-  :: (thread_set_1y (S x) y (S z) (fun x : ThreadId_t => x :: []) b) ++
-  thread_set_2xy x (S y) (S z) (fun x : ThreadId_t => x :: []) b) in H.
-  destruct H as [m1 [m2 [H [H' H2]]]]. subst.
-  apply cat_count with (l1 := b x y z
-  :: (thread_set_2yz (S x) y 1 (fun x0 : ThreadId_t => x0 :: []) (fun i1 j _ : nat => b i1 j z) ++
-  thread_set_3xyz x (S y) 1 (fun x0 : ThreadId_t => x0 :: []) (fun i1 j _ : nat => b i1 j z))).
-  rewrite block_ok_xyz.
-  rewrite block_ok_xy in H.
-  apply cat_count_rev with (l1 := b x y z
-  :: thread_set_1y (S x) y (S z) (fun x : ThreadId_t => x :: []) b) in H.
-  destruct H as [m1' [m2' [H [H1 H2]]]]. subst.
-  apply cat_count with (l1 := b x y z
-  :: thread_set_2yz (S x) y 1 (fun x0 : ThreadId_t => x0 :: []) (fun i1 j k : nat => b i1 j z)).
-  rewrite block_ok_yz. rewrite block_ok_y in H.
-  simpl.
-  assert (forall n, count i (b x y z :: buildList y (fun k : nat => b x k z)) n ->
-  count i (b x y z :: zip (buildList y (fun j : nat => b x j z :: []))) n).
-    clear. induction y. intros. apply H. intros. simpl in *. inversion H; clear H; subst.
-    apply cons_eq; apply IHy; apply H4.
-    apply cons_neq. apply IHy; apply H4. apply Hneq.
-  apply H0 in H.
-  apply H.
-  simpl.
-  assert (forall n, count i (zip (buildList x (fun j : nat => buildList (S y) (fun k : nat => b j k z)))) n ->
-  count i (zip (buildList x (fun i0 : nat => zip (buildList (S y) (fun j : nat => b i0 j z :: []))))) n).
-    clear. induction x. intros. apply H. intros. simpl in *. inversion H; clear H; subst.
-    apply cons_eq. rewrite zip_ok. apply cat_count_rev in H4.
-    destruct H4 as [m [m' [H1 [H2 H3]]]]. subst.
-    apply cat_count.
-    apply H1. apply IHx; apply H2.
-    apply cons_neq.
-    rewrite zip_ok. apply cat_count_rev in H4.
-    destruct H4 as [m [m' [H1 [H2 H3]]]]. subst.
-    apply cat_count.
-    apply H1. apply IHx; apply H2. apply Hneq.
-  apply H0 in H1.
-  apply H1.
-  apply IHz in H'.
-  apply H'.
-Qed.
-
-Lemma forall_grid_x :
-  forall x y z x' y' z' i n g, count i (thread_set_3xyz x y z (fun b => thread_set_3xyz x' y' z' (fun x : ThreadId_t => x :: []) b) g) n ->
-            count i (zip (buildList x (fun i0 : nat => thread_set_3xyz 1 y z (fun b => thread_set_3xyz x' y' z' (fun x : ThreadId_t => x :: []) b)
-                    (fun _ j k : nat => g i0 j k)))) n.
-Proof.
-  intros.
-  generalize dependent n. induction x; intros. destruct y; apply H.
-  simpl in *. destruct y,z.
-    simpl in *. rewrite blockempty. apply H. reflexivity.
-    simpl in *. rewrite blockempty. apply H. reflexivity.
-    simpl in *. rewrite blockempty. apply H. reflexivity.
-    simpl in *.
-    apply cat_count_rev in H.
-    destruct H as [m01 [m02 [H [H01 H02]]]]. subst.
-    apply cat_count_rev in H.
-    destruct H as [m11 [m12 [H [H11 H12]]]]. subst.
-    apply cat_count_rev in H.
-    destruct H as [m21 [m22 [H [H21 H2]]]]. subst.
-    repeat (rewrite cat_empty).
-    apply cat_count.
-    apply cat_count.
-    apply cat_count.
-    apply H.
-    rewrite grid_ok_z.
-    rewrite grid_ok_z in H21.
-    apply H21.
-    rewrite grid_ok_yz.
-    rewrite grid_ok_yz in H11.
-    apply H11.
-    clear H. clear H11. clear H21. clear IHx. generalize dependent m02. induction x.
-        intros. apply H01. simpl. intros.
-        apply cat_count_rev in H01.
-        destruct H01 as [m [m' [H1 [H2 H3]]]]. subst.
-        repeat (rewrite cat_empty).
-        apply cat_count.
-        rewrite grid_ok_z in H1.
-        rewrite grid_ok_yz in H1.
-        rewrite grid_ok_z.
-        rewrite grid_ok_yz.
-        apply H1. apply IHx.
-    apply H2.
-Qed.
-
-Lemma forall_grid_y :
-  forall x y z x' y' z' i n g, count i (thread_set_3xyz x y z (fun b => thread_set_3xyz x' y' z' (fun x : ThreadId_t => x :: []) b) g) n ->
-            count i (zip (buildList y (fun i0 : nat => thread_set_3xyz x 1 z (fun b => thread_set_3xyz x' y' z' (fun x : ThreadId_t => x :: []) b)
-                    (fun i1 _ k : nat => g i1 i0 k)))) n.
-Proof.
-  intros. apply transpose_xy_grid in H.
-  generalize dependent n. induction y; intros. destruct x; apply H.
-  simpl in *. destruct x,z.
-    simpl in *. rewrite blockempty. apply H. reflexivity.
-    simpl in *. rewrite blockempty. apply H. reflexivity.
-    simpl in *. rewrite blockempty. apply H. reflexivity.
-    simpl in *.
-    apply cat_count_rev in H.
-    destruct H as [m01 [m02 [H [H01 H02]]]]. subst.
-    apply cat_count_rev in H.
-    destruct H as [m11 [m12 [H [H11 H12]]]]. subst.
-    apply cat_count_rev in H.
-    destruct H as [m21 [m22 [H [H21 H2]]]]. subst.
-    repeat (rewrite cat_empty).
-    apply cat_count.
-    apply cat_count.
-    apply cat_count.
-    apply H.
-    rewrite grid_ok_z.
-    rewrite grid_ok_z in H21.
-    apply H21.
-    rewrite grid_ok_xyz.
-    rewrite grid_ok_xz in H11.
-    clear H. clear H01. clear H21. clear IHy. generalize dependent m12. induction x.
-        intros. apply H11. simpl. intros.
-        apply cat_count_rev in H11.
-        destruct H11 as [m [m' [H1 [H2 H3]]]]. subst.
-        repeat (rewrite cat_empty).
-        apply cat_count. apply H1.
-        apply IHx. apply H2.
-    clear H. clear H11. clear H21. clear IHy. generalize dependent m02. induction y.
-        intros. apply H01. simpl. intros.
-        apply cat_count_rev in H01.
-        destruct H01 as [m [m' [H1 [H2 H3]]]]. subst.
-        repeat (rewrite cat_empty).
-        apply cat_count.
-        rewrite grid_ok_z in H1.
-        rewrite grid_ok_xz in H1.
-        rewrite grid_ok_z.
-        rewrite grid_ok_xyz.
-        apply cat_count_rev in H1.
-        destruct H1 as [m1 [m2 [H1 [H2' H3]]]]. subst.
-        repeat (rewrite cat_empty).
-        apply cat_count.
-        apply H1.
-        apply cat_count_rev in H1.
-        destruct H1 as [m1' [m2' [H1 [H2'' H3]]]]. subst.
-        repeat (rewrite cat_empty).
-        clear H2. clear H2''. clear H1. clear IHy.
-        clear m12. clear m21. clear m'. clear m1'. clear m2'.
-        generalize dependent m2. induction x.
-          intros. apply H2'.
-          intros. simpl in *.
-          apply cat_count_rev in H2'.
-          destruct H2' as [m01 [m02 [H [H01 H02]]]]. subst.
-          apply cat_count_rev in H.
-          destruct H as [m11 [m12 [H [H11 H12]]]]. subst.
-          repeat (rewrite cat_empty).
-          apply cat_count. apply cat_count.
-          apply H.
-          apply H11.
-          apply IHx. apply H01.
-    apply IHy.
-    apply H2.
-Qed.
-
-Lemma forall_grid_z :
-  forall x y z x' y' z' i n g, count i (thread_set_3xyz x y z (fun b => thread_set_3xyz x' y' z' (fun x : ThreadId_t => x :: []) b) g) n ->
-            count i (zip (buildList z (fun i0 : nat => thread_set_3xyz x y 1 (fun b => thread_set_3xyz x' y' z' (fun x : ThreadId_t => x :: []) b)
-                    (fun i j k : nat => g i j i0)))) n.
-Proof.
-  intros. apply transpose_xz_grid in H.
-  generalize dependent n. induction z; intros. destruct x,y; apply H.
-  simpl in *. destruct x,y.
-    simpl in *. rewrite blockempty. apply H. reflexivity.
-    simpl in *. rewrite blockempty. apply H. reflexivity.
-    simpl in *. rewrite blockempty. apply H. reflexivity.
-    simpl in *.
-    apply cat_count_rev in H.
-    destruct H as [m01 [m02 [H [H01 H02]]]]. subst.
-    apply cat_count_rev in H.
-    destruct H as [m11 [m12 [H [H11 H12]]]]. subst.
-    apply cat_count_rev in H.
-    destruct H as [m21 [m22 [H [H21 H2]]]]. subst.
-    repeat (rewrite cat_empty).
-    apply cat_count.
-    apply cat_count.
-    apply cat_count.
-    apply H.
-    rewrite grid_ok_yz.
-    rewrite grid_ok_y in H21.
-    clear H. clear H11. clear H01. clear IHz. generalize dependent m22.
-    clear m02. clear m12. induction y.
-      intros. apply H21.
-      intros. simpl in *.
-      apply cat_count_rev in H21.
-      destruct H21 as [m01 [m02 [H [H01 H02]]]]. subst.
-      repeat (rewrite cat_empty).
-      apply cat_count.
-      apply H.
-      apply IHy. apply H01.
-    rewrite grid_ok_xyz.
-    rewrite grid_ok_xy in H11.
-    clear H. clear H21. clear H01. clear IHz. generalize dependent m12.
-    clear m02. clear m22. induction x.
-      intros. apply H11.
-      intros. simpl in *.
-      apply cat_count_rev in H11.
-      destruct H11 as [m01 [m02 [H [H01 H02]]]]. subst.
-      apply cat_count_rev in H.
-      destruct H as [m11 [m12 [H [H11 H12]]]]. subst.
-      repeat (rewrite cat_empty).
-      apply cat_count.
-      apply cat_count.
-      apply H.
-      clear H01. clear H. clear IHx.
-      clear m21. clear m02. clear m11. generalize dependent m12.
-      induction y.
-        intros. apply H11.
-        intros. simpl in *.
-        apply cat_count_rev in H11.
-        destruct H11 as [m01 [m02 [H [H01 H02]]]]. subst.
-        repeat (rewrite cat_empty).
-        apply cat_count.
-        apply H.
-        apply IHy. apply H01.
-      apply IHx. apply H01.
-    clear H. clear H11. clear H21. clear IHz. generalize dependent m02.
-    clear m12. clear m21. clear m22. induction z.
-        intros. apply H01.
-        simpl. intros.
-        apply cat_count_rev in H01.
-        destruct H01 as [m01 [m02' [H [H01 H02]]]]. subst.
-        apply cat_count_rev in H.
-        destruct H as [m11 [m12 [H [H11 H12]]]]. subst.
-        apply cat_count_rev in H.
-        destruct H as [m21 [m22 [H [H21 H22]]]]. subst.
-        repeat (rewrite cat_empty).
-        apply cat_count.
-        apply cat_count.
-        apply cat_count.
-        apply H.
-        rewrite grid_ok_y in H21.
-        rewrite grid_ok_yz.
-        clear H. clear H11. clear H01. clear m02'. clear m12. clear m21.
-        generalize dependent m22. clear IHz. induction y.
-          intros. apply H21.
-          intros. simpl in *.
-          apply cat_count_rev in H21.
-          destruct H21 as [m01 [m02 [H [H01 H02]]]]. subst.
-          repeat (rewrite cat_empty).
-          apply cat_count.
-          apply H.
-          apply IHy. apply H01.
-        rewrite grid_ok_xyz.
-        rewrite grid_ok_xy in H11.
-        clear H. clear H21. clear H01. clear m02'. clear m22. clear m21.
-        generalize dependent m12. clear IHz. induction x.
-          intros. apply H11.
-          intros. simpl in *.
-          apply cat_count_rev in H11.
-          destruct H11 as [m01 [m02 [H [H01 H02]]]]. subst.
-          apply cat_count_rev in H.
-          destruct H as [m11 [m12' [H [H11 H12]]]]. subst.
-          repeat (rewrite cat_empty).
-          apply cat_count. apply cat_count.
-          apply H.
-          clear H. clear H01. clear m02. clear m11.
-          generalize dependent m12'. clear IHx. induction y.
-            intros. apply H11.
-          intros. simpl in *.
-          apply cat_count_rev in H11.
-          destruct H11 as [m01 [m02 [H [H01 H02]]]]. subst.
-          repeat (rewrite cat_empty).
-          apply cat_count.
-          apply H.
-          apply IHy. apply H01.
-        apply IHx. apply H01.
-    apply IHz. apply H01.
-Qed.
-
-Proposition collection_ok :
-  forall i n v n0 d,
-(forall n' n0, n' < n -> count i (thread_set' (v n')) n0 ->
-    count i (thread_set' (for_all (v n') d)) n0) ->
-  count i (zip (buildList n (fun i : nat => thread_set' (v i)))) n0
--> count i (zip (buildList n (fun i0 : nat => thread_set' (for_all (v i0) d))))
-  n0.
-Proof.
-  induction n.
-  + intros. apply H0.
-  + intros. simpl in *.
-  apply cat_count_rev in H0.
-  destruct H0 as [m [m' [H0 [H1 H2]]]]. subst.
-  apply cat_count.
-  apply H. apply le_n. apply H0.
-  apply IHn. intros. apply le_S in H2. apply H with (n0 := n0) in H2. apply H2. apply H3.
-  apply H1.
-Qed.
-
-Proposition collection_ok_physical :
-  forall i n v n0 d f,
-(forall n' n0, n' < n -> count i (physical_thread_set (v n') f) n0 ->
-    count i (physical_thread_set (for_all (v n') d) f) n0) ->
-  count i (zip (buildList n (fun i : nat => physical_thread_set (v i) f))) n0
--> count i (zip (buildList n (fun i0 : nat => physical_thread_set (for_all (v i0) d) f)))
-  n0.
-Proof.
-  induction n.
-  + intros. apply H0.
-  + intros. simpl in *.
-  apply cat_count_rev in H0.
-  destruct H0 as [m [m' [H0 [H1 H2]]]]. subst.
-  apply cat_count.
-  apply H. apply le_n. apply H0.
-  apply IHn. intros. apply le_S in H2. apply H with (n0 := n0) in H2. apply H2. apply H3.
-  apply H1.
-Qed.
-
-
-
-Proposition collection_ok_select :
-  forall i n v m m' d l r,
-(forall (n : nat) (d : dimension) (m m' l r : nat),
-    count i (thread_set' (v n)) m ->
-    count i (thread_set' (select_range (v n) l r d)) m' -> m' <= m) ->
-  count i (zip (buildList n (fun i : nat => thread_set' (v i)))) m
--> count i (zip (buildList n (fun i : nat => thread_set' (select_range (v i) l r d)))) m'
--> m' <= m.
-Proof.
-  induction n.
-  + intros. inversion H1. apply le_0_n.
-  + intros. simpl in *.
-  apply cat_count_rev in H0.
-  apply cat_count_rev in H1.
-  destruct H1 as [m1' [m2' [H0' [H1' H2']]]]. subst.
-  destruct H0 as [m1 [m2 [H0 [H1 H2]]]]. subst.
-  apply H with (m := m1) in H0'.
-  apply IHn with (m := m2) (m' := m2') (l := l) (r := r) (d := d) in H.
-  apply Nat.add_le_mono. apply H0'. apply H.
-  apply H1. apply H1'.
-  apply H0.
-Qed.
-
 Proposition buildList_end :
   forall T n (f : nat -> T),
   buildList (S n) f = buildList n (fun i => f (S i)) ++ (f 0 :: []).
@@ -962,4 +535,125 @@ Proof.
   apply zip_buildlist_inclusion_right with (m := m) (n := n) in H2.
   apply Nat.le_trans with (m := m''). apply H0. apply H2.
   apply H. apply H1. apply H2.
+Qed.
+
+Lemma next_multiple_unchange_multiple :
+  forall n m,
+  next_multiple (n*m) m = n*m.
+Proof.
+  destruct n.
+  - intro. simpl. unfold next_multiple. rewrite Nat.Div0.mod_0_l. reflexivity.
+  - destruct m. rewrite Nat.mul_0_r. reflexivity.
+    unfold next_multiple. rewrite Nat.Div0.mod_mul. reflexivity.
+Qed.
+
+Lemma next_multiple_aux_is_a_multiple :
+  forall n k m,
+    k < m ->
+  next_multiple_aux (n*m+k) m = n*m.
+Proof.
+  destruct n.
+  - intros. simpl. unfold next_multiple_aux.
+    induction k.
+    + reflexivity.
+    + assert (S k mod m = S k). apply Nat.mod_small. apply H.
+    rewrite H0. apply IHk. apply le_S_n. apply le_S. apply H.
+  - destruct m; intros. rewrite Nat.mul_0_r. inversion H.
+    induction k.
+    + assert ((S n * S m + 0) mod (S m) = 0). rewrite Nat.Div0.add_mod. rewrite Nat.Div0.mod_mul.
+      rewrite Nat.mod_small. rewrite Nat.mod_small. reflexivity. apply H.  rewrite Nat.mod_small; apply H.
+      simpl in *. rewrite H0. rewrite Nat.add_0_r. reflexivity.
+    + assert ((S n * S m + S k) mod (S m) = S k). rewrite Nat.Div0.add_mod. rewrite Nat.Div0.mod_mul.
+      rewrite Nat.mod_small. rewrite Nat.mod_small. reflexivity. apply H.  rewrite Nat.mod_small; apply H.
+      simpl in H0. simpl. rewrite H0.
+      clear H0.
+      assert (m + n * S m + S k = S n * S m + k).
+        simpl. rewrite plus_n_Sm. reflexivity.
+      rewrite H0. apply IHk. apply le_S. apply le_S_n. apply H.
+Qed.
+
+Lemma next_multiple_is_a_multiple :
+  forall n k m,
+    k < m -> k > 0 ->
+  next_multiple (n*m+k) m = (S n)*m.
+Proof.
+  destruct k.
+  - intros. inversion H0.
+  - intros. unfold next_multiple.
+  assert ((n * m + S k) mod m = S k). rewrite Nat.Div0.add_mod. rewrite Nat.Div0.mod_mul.
+    rewrite Nat.mod_small. rewrite Nat.mod_small. reflexivity. apply H.  rewrite Nat.mod_small; apply H.
+    rewrite H1. assert (n * m + S k + m = (S n) * m + S k). simpl. rewrite Nat.add_comm.
+    rewrite Nat.add_assoc. reflexivity. rewrite H2.
+    apply next_multiple_aux_is_a_multiple. apply H.
+Qed.
+
+Lemma mod_decomposition :
+  forall m n,
+  exists k, n = k*m + (n mod m)
+.
+Proof.
+  intros.
+  exists (n/m).
+  rewrite Nat.mul_comm. apply Nat.Div0.div_mod.
+Qed.
+
+Lemma next_multiple_0 :
+  forall m,
+  next_multiple 0 m = 0.
+Proof.
+  intros.
+  unfold next_multiple. rewrite Nat.Div0.mod_0_l. reflexivity.
+Qed.
+
+Lemma next_multiple_1 :
+  forall n,
+  next_multiple n 1 = n.
+Proof.
+  intros.
+  assert (next_multiple n 1 = next_multiple (n*1) 1).
+    rewrite Nat.mul_1_r. reflexivity.
+  rewrite H. rewrite next_multiple_unchange_multiple.
+  rewrite Nat.mul_1_r. reflexivity.
+Qed.
+
+Proposition expand_block :
+  forall T (i : T) x dx y z n n' f b,
+  count i (map f (thread_set_3xyz dx y z (fun x0 : ThreadId_t => x0 :: [])
+        (fun i0 j k0 : nat => b (x+i0) j k0))) n /\ 
+        count i (map f (thread_set_3xyz x y z (fun x0 : ThreadId_t => x0 :: [])
+        (fun i0 j k0 : nat => b i0 j k0))) n' ->
+        count i (map f (thread_set_3xyz (x+dx) y z (fun x0 : ThreadId_t => x0 :: [])
+        (fun i0 j k0 : nat => b i0 j k0))) (n + n').
+Proof.
+  induction dx.
+  - intros. simpl in *. destruct H; inversion H;subst. rewrite Nat.add_0_r. apply H0.
+  - simpl in *. destruct y,z.
+    + intros. destruct H. destruct x; inversion H; inversion H0; subst; apply empty.
+    + intros. destruct H. destruct x; inversion H; inversion H0; subst; apply empty.
+    + intros. destruct H. destruct x; inversion H; inversion H0; subst; apply empty.
+    + intros. destruct H. rewrite cons_cat in H.
+    repeat (rewrite map_cat in *).
+    apply cat_count_rev in H.
+    destruct H as [m1 [m2 [H1 [H2 H']]]]; subst.
+    apply cat_count_rev in H2.
+    destruct H2 as [m3 [m4 [H2 [H4 H']]]]; subst.
+    apply cat_count_rev in H2.
+    destruct H2 as [m5 [m6 [H2 [H3 H']]]]; subst.
+    rewrite <- plus_n_Sm. simpl.
+    repeat (rewrite block_ok_z in *).
+    repeat (rewrite block_ok_yz in *).
+    rewrite cons_cat.
+    assert (m1 + (m5 + m6 + m4) + n' = m1 + ((m5 + m6) + (m4 + n'))). {
+      clear.
+      rewrite Nat.add_comm.
+      repeat (rewrite Nat.add_assoc).
+      assert (m4 + n' = n' + m4). apply Nat.add_comm.
+      assert (n' + m1 + m5 + m6 + m4 = n' + (m1 + m5 + m6 + m4)). repeat (rewrite Nat.add_assoc). reflexivity.
+      rewrite H0. rewrite Nat.add_comm. rewrite <- Nat.add_assoc. rewrite H. reflexivity.
+    } rewrite H. clear H.
+    repeat (rewrite map_cat).
+    apply cat_count. apply H1.
+    apply cat_count.
+    apply cat_count. apply H2. apply H3.
+    apply IHdx. split. apply H4. apply H0.
 Qed.

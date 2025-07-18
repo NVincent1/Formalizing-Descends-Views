@@ -6,6 +6,30 @@ From Views.Execution_resources Require Import correctness_lemmas.
 From Views.Execution_resources Require Import sets_of_threads.
 Require Import PeanoNat.
 
+
+Proposition induction_step_collection_select :
+  forall i n v m m' d l r,
+(forall (n : nat) (d : dimension) (m m' l r : nat),
+    count i (thread_set' (v n)) m ->
+    count i (thread_set' (select_range (v n) l r d)) m' -> m' <= m) ->
+  count i (zip (buildList n (fun i : nat => thread_set' (v i)))) m
+-> count i (zip (buildList n (fun i : nat => thread_set' (select_range (v i) l r d)))) m'
+-> m' <= m.
+Proof.
+  induction n.
+  + intros. inversion H1. apply le_0_n.
+  + intros. simpl in *.
+  apply cat_count_rev in H0.
+  apply cat_count_rev in H1.
+  destruct H1 as [m1' [m2' [H0' [H1' H2']]]]. subst.
+  destruct H0 as [m1 [m2 [H0 [H1 H2]]]]. subst.
+  apply H with (m := m1) in H0'.
+  apply IHn with (m := m2) (m' := m2') (l := l) (r := r) (d := d) in H.
+  apply Nat.add_le_mono. apply H0'. apply H.
+  apply H1. apply H1'.
+  apply H0.
+Qed.
+
 Proposition select_correct :
   forall i e d m m' l r,
   count i (thread_set' e) m -> count i (thread_set' (select_range e l r d)) m' -> m' <= m
@@ -1333,7 +1357,7 @@ Proof.
                         apply cat_count_rev in H1.
                         apply IHz. apply H2.
                 *** simpl in H0. inversion H0; subst. apply le_0_n.
-  - simpl in *. apply collection_ok_select with (n := n) (m := m) (m' := m') (l := l) (r := r) (d := d) in H.
+  - simpl in *. apply induction_step_collection_select with (n := n) (m := m) (m' := m') (l := l) (r := r) (d := d) in H.
     apply H. apply H0. apply H1.
   - inversion H0. apply le_0_n.
 Qed.
