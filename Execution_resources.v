@@ -2,10 +2,9 @@
 From Views Require Import utils.
 Require Import PeanoNat.
 
-
 Definition Warp_size : nat.
-apply 0.
-Qed.
+Proof. apply 0. Qed.
+(* Definition Warp_size : nat := 8. *)
 
 Definition shape : Type := nat * nat * nat.
 (* Notation "XYZ< x y z >" := (x,y,z).
@@ -250,8 +249,11 @@ Fixpoint translate (e : execution_resource) (f : ThreadId_t -> PhysicalId_t) : e
   | _ => e
 end.
 
+(* 
+(* Examples with Warp_size := 8 *)
 
-(* Example test2 :
+
+Example test2 :
   let f_addr := get_physical_id (1,1,1) (2,2,2) in
   to_list (translate (for_all (for_all (for_all
       (Block (XYZ 2 2 2)) _z) _y) _x) f_addr) =
@@ -260,9 +262,9 @@ end.
 Proof.
   simpl.
   reflexivity.
-Qed. *)
+Qed.
 
-(* Example test3 :
+Example test3 :
   let f_addr := get_physical_id (1,1,1) (2,2,2) in
   to_list (translate (for_all (select_range (for_all
       (Block (XYZ 2 5 2)) _z) 2 4 _y) _x) f_addr) =
@@ -271,26 +273,16 @@ Qed. *)
 Proof.
   simpl.
   reflexivity.
-Qed. *)
+Qed.
 
-
-(* Example test4 :
+Example test4 :
   let f_addr := get_physical_id (1,1,1) (2,2,2) in
   to_list (for_all (warps (Block (XYZ 2 2 2)) f_addr) _x) =
-  [[[
-[@ thread 0 :: @ thread 1 :: @ thread 2 :: @ thread 3 :: @ thread 4 :: @ thread 5 :: @ thread 6 :: @ thread 7
-:: []] :: []]
-::
-[[@ thread 8 :: @ thread 9 :: @ thread 10 :: @ thread 11 :: @ thread 12 :: @ thread 13 :: @ thread 14 :: @ thread 15
-:: []] :: []]
-:: []]
-::
-[[[@ thread 16 :: @ thread 17 :: @ thread 18 :: @ thread 19 :: @ thread 20 :: @ thread 21 :: @ thread 22 :: @ thread 23
-:: []] :: []]
-::
-[[@ thread 24 :: @ thread 25 :: @ thread 26 :: @ thread 27 :: @ thread 28 :: @ thread 29 :: @ thread 30 :: @ thread 31
-:: []] :: []]
-:: []] :: []].
+[[[[@ thread 0 :: @ thread 1 :: @ thread 2 :: @ thread 3 :: @ thread 4 :: @ thread 5 :: @ thread 6 :: @ thread 7 :: []]
+:: [@ thread 16 :: @ thread 17 :: @ thread 18 :: @ thread 19 :: @ thread 20 :: @ thread 21 :: @ thread 22 :: @ thread 23 :: []]:: []]
+:: [[@ thread 8 :: @ thread 9 :: @ thread 10 :: @ thread 11 :: @ thread 12 :: @ thread 13 :: @ thread 14 :: @ thread 15 :: []]
+:: [@ thread 24 :: @ thread 25 :: @ thread 26 :: @ thread 27 :: @ thread 28 :: @ thread 29 :: @ thread 30 :: @ thread 31 :: []]
+:: []] :: []] :: []].
 Proof.
   simpl.
   reflexivity.
