@@ -3,6 +3,7 @@ From Views Require Import utils.
 From Views.Execution_resources Require Import Execution_resources.
 From Views.Execution_resources Require Import lemmas.
 From Views.Execution_resources Require Import correctness_lemmas.
+From Views.Execution_resources Require Import sets_of_threads.
 Require Import PeanoNat.
 
 Fixpoint forall_no_error (e : execution_resource) (d : dimension) : Prop :=
@@ -367,7 +368,7 @@ Proof.
   - right. right. right. right. right. right. right. right. right. reflexivity.
 Qed.
 
-Proposition for_all_ok_physical :
+Proposition for_all_correct_physical :
   forall i e d m f,
   forall_no_error e d -> count i (physical_thread_set e f) m -> count i (physical_thread_set (for_all e d) f) m
 .

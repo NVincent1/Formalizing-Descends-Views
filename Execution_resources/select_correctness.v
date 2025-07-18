@@ -3,6 +3,7 @@ From Views Require Import utils.
 From Views.Execution_resources Require Import Execution_resources.
 From Views.Execution_resources Require Import lemmas.
 From Views.Execution_resources Require Import correctness_lemmas.
+From Views.Execution_resources Require Import sets_of_threads.
 Require Import PeanoNat.
 
 Proposition select_correct :

@@ -5,6 +5,7 @@ From Views.Execution_resources Require Import blocks.
 From Views.Execution_resources Require Import grids.
 From Views.Execution_resources Require Import lemmas.
 From Views.Execution_resources Require Import correctness_lemmas.
+From Views.Execution_resources Require Import sets_of_threads.
 Require Import PeanoNat.
 
 Lemma next_multiple_unchange_multiple :

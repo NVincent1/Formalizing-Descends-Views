@@ -2,6 +2,7 @@
 From Views Require Import utils.
 From Views.Execution_resources Require Import Execution_resources.
 From Views.Execution_resources Require Import lemmas.
+From Views.Execution_resources Require Import sets_of_threads.
 Require Import PeanoNat.
 
 Axiom FunEquality :
@@ -961,86 +962,4 @@ Proof.
   apply zip_buildlist_inclusion_right with (m := m) (n := n) in H2.
   apply Nat.le_trans with (m := m''). apply H0. apply H2.
   apply H. apply H1. apply H2.
-Qed.
-
-Fixpoint sum {n : nat} (v : Vector nat n) :=
-  match n with
-  | 0 => 0
-  | S n => v n + sum v (n := n)
-end.
-
-Fixpoint eqb (m n : nat) :=
-  match m,n with
-  | 0,0 => true
-  | S m, S n => eqb m n
-  | _,_ => false
-end.
-
-Proposition eqb_correct :
-  forall m n, eqb m n = true -> m = n
-.
-Proof.
-  induction m.
-  - destruct n. reflexivity. intro. inversion H.
-  - destruct n. intro. inversion H. intro. apply IHm in H. subst; reflexivity.
-Qed.
-
-Proposition eqb_correct_2 :
-  forall m n, m <> n -> eqb m n = false
-.
-Proof.
-  induction m.
-  - destruct n. intro. exfalso. apply H. reflexivity. reflexivity.
-  - destruct n. reflexivity. intro. apply IHm. intro. rewrite H0 in H. apply H. reflexivity.
-Qed.
-
-Proposition eqb_refl :
-  forall n, eqb n n = true
-.
-Proof.
-  induction n.
-  - reflexivity.
-  - apply IHn.
-Qed.
-
-Proposition vector_sum_eq :
-  forall n (v1 v2 : Vector nat n),
-  (forall i, i < n -> v1 i = v2 i) -> sum v1 = sum v2.
-Proof.
-  induction n.
-  - reflexivity.
-  - intros. simpl. assert (forall i : nat, i < n -> v1 i = v2 i).
-    intros. apply le_S in H0. apply H in H0. apply H0.
-    apply IHn in H0. rewrite H0.
-    assert (v1 n = v2 n). apply H. apply le_n. rewrite H1.
-    reflexivity.
-Qed.
-
-Proposition collection_correct :
-  forall a n (v : Vector execution_resource n),
-      exists (m : Vector nat n), (forall i, i < n -> count a (thread_set' (v i)) (m i)) ->
-      count a (thread_set' (Collection n v)) (sum m)
-.
-Proof.
-  induction n.
-    - exists (fun i => i). intros. apply empty.
-    - intros. assert (exists m : Vector nat n,
-        (forall i : nat, i < n -> count a (thread_set' (v i)) (m i)) ->
-        count a (thread_set' (Collection n v)) (sum m)). apply IHn.
-      destruct H.
-      assert (exists m, count a (thread_set' (v n)) m). apply count_exists.
-      destruct H0.
-      exists (fun i => if (eqb i n) then x0 else x i).
-      intros.
-      simpl. apply cat_count.
-      * rewrite eqb_refl. apply H0.
-      * assert (sum (n := n) (fun i : nat => if eqb i n then x0 else x i) = sum x).
-        apply vector_sum_eq.
-        intros. assert (eqb i n = false). apply eqb_correct_2.
-        intro. subst. apply Nat.lt_irrefl in H2. apply H2. rewrite H3. reflexivity.
-        rewrite H2. apply H.
-        intros. assert (i < (S n)). apply le_S in H3. apply H3.
-        apply H1 in H4. assert (eqb i n = false). apply eqb_correct_2.
-        intro. subst. apply Nat.lt_irrefl in H3. apply H3. rewrite H5 in H4.
-        apply H4.
 Qed.
