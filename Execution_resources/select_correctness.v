@@ -124,3 +124,61 @@ Proof.
       ++ simpl in *. exfalso. apply H0. reflexivity.
 Qed.
 
+Proposition select_error :
+  forall e l r d,
+  select_range e l r d = Error -> (
+  (exists s i b, e = block s i b) \/
+  (exists s s' g, e = grid s s' g) \/
+  (exists w, e = warp w) \/
+  (exists i, e = thread i) \/
+  (exists i, e = lthread i) \/
+  e = Error \/
+  (d = _x /\ exists x y z v, e = TensorCollection x y z v /\ ~(r <= x)) \/
+  (d = _y /\ exists x y z v, e = TensorCollection x y z v /\ ~(r <= y)) \/
+  (d = _z /\ exists x y z v, e = TensorCollection x y z v /\ ~(r <= z))
+).
+Proof.
+  destruct e; intros; simpl in *.
+  - right. right. right. left. exists t. reflexivity.
+  - right. right. right. right. left. exists t. reflexivity.
+  - right. right. left. exists w. reflexivity.
+  - left. exists shp,id,b. reflexivity.
+  - right. left. exists shp,shp',g. reflexivity.
+  - inversion H.
+  - destruct d.
+    + destruct (r <=? x) eqn:E. inversion H.
+      right. right. right. right. right. right. left.
+      split. reflexivity.
+      exists x,y,z,content. split.
+      reflexivity.
+      intro. assert (forall a b, a <= b -> a <=? b = true). {
+        clear.
+        induction a.
+        * intros. reflexivity.
+        * intros. destruct b. inversion H. simpl. apply le_S_n in H. apply IHa in H. apply H.
+    } apply H1 in H0. rewrite E in H0. inversion H0.
+    + destruct (r <=? y) eqn:E. inversion H.
+      right. right. right. right. right. right. right. left.
+      split. reflexivity.
+      exists x,y,z,content. split.
+      reflexivity.
+      intro. assert (forall a b, a <= b -> a <=? b = true). {
+        clear.
+        induction a.
+        * intros. reflexivity.
+        * intros. destruct b. inversion H. simpl. apply le_S_n in H. apply IHa in H. apply H.
+    } apply H1 in H0. rewrite E in H0. inversion H0.
+    + destruct (r <=? z) eqn:E. inversion H.
+      right. right. right. right. right. right. right. right.
+      split. reflexivity.
+      exists x,y,z,content. split.
+      reflexivity.
+      intro. assert (forall a b, a <= b -> a <=? b = true). {
+        clear.
+        induction a.
+        * intros. reflexivity.
+        * intros. destruct b. inversion H. simpl. apply le_S_n in H. apply IHa in H. apply H.
+    } apply H1 in H0. rewrite E in H0. inversion H0.
+  - right. right. right. right. right. left. reflexivity.
+Qed.
+
