@@ -117,9 +117,9 @@ Inductive Nested_List (T : Type) : Type :=
 Fixpoint to_list (e : execution_resource) : Nested_List execution_resource :=
   match e with
   | Collection n v => Nest _ (rev (buildList n (fun i => to_list (v i))))
-  | TensorCollection x y z v => Nest _ (rev (buildList x (fun i => 
+  | TensorCollection x y z v => Nest _ (rev (buildList z (fun k => 
                                 Nest _ (rev (buildList y (fun j =>
-                                Nest _ (rev (buildList z (fun k => to_list (v i j k))))))))))
+                                Nest _ (rev (buildList x (fun i => to_list (v i j k))))))))))
   | _ => Elt _ e
 end.
 
@@ -165,14 +165,6 @@ Fixpoint threads (e : execution_resource) : execution_resource :=
   | _ => Error
 end.
 
-Example test1 :
-  to_list (Block (XZ 2 4)) =
-  @ block (XZ 2 4) (0,0,0) (fun i j k : nat => ((0,0,0),(i, j, k))).
-Proof.
-  simpl.
-  reflexivity.
-Qed.
-
 Definition get_logical_id (shp : shape) : ThreadId_t -> LogicalId_t :=
   fun i =>
   match shp,i with
@@ -214,7 +206,7 @@ Fixpoint warps (e : execution_resource) (f : ThreadId_t -> PhysicalId_t) : execu
   match e with
   | Collection n v => Collection n (fun x => warps (v x) f)
   | TensorCollection x y z v => TensorCollection x y z (fun i j k => warps (v i j k) f)
-  | grid (x,y,z) (x',y',z') g => TensorCollection x y z (fun i j k => (warp_aux (x',y',z') (i,j,k) (g i j k) f))
+  | grid (x,y,z) (x',y',z') g => Collection x (fun i => Collection y (fun j => Collection z (fun k => (warp_aux (x',y',z') (i,j,k) (g i j k) f))))
   | block (x,y,z) (idx,idy,idz) b => warp_aux (x,y,z) (idx,idy,idz) b f
   | warp w => e
   | _ => Error
@@ -238,6 +230,15 @@ Fixpoint simplify (e : execution_resource) : execution_resource :=
 end.
 
 (* Examples with Warp_size := 8 *)
+
+
+Example test1 :
+  to_list (Block (XZ 2 4)) =
+  @ block (XZ 2 4) (0,0,0) (fun i j k : nat => ((0,0,0),(i, j, k))).
+Proof.
+  simpl.
+  reflexivity.
+Qed.
 
 Example test2 :
   let f_addr := get_physical_id (1,1,1) (2,2,2) in
@@ -268,40 +269,26 @@ Qed.
 Example test4 :
   let f_addr := get_physical_id (1,1,1) (2,2,2) in
   to_list (simplify (for_all (threads (warps (Block (XYZ 2 2 2)) f_addr)) _x)) =
-[[[[[[@ thread 0 :: []] :: []]
-      :: [[@ thread 1 :: []] :: []]
-      :: [[@ thread 2 :: []] :: []]
-      :: [[@ thread 3 :: []] :: []]
-      :: [[@ thread 4 :: []] :: []]
-      :: [[@ thread 5 :: []] :: []]
-      :: [[@ thread 6 :: []] :: []]
-      :: [[@ thread 7 :: []] :: []] :: []]
-:: [[[@ thread 16 :: []] :: []]
-      :: [[@ thread 17 :: []] :: []]
-      :: [[@ thread 18 :: []] :: []]
-      :: [[@ thread 19 :: []] :: []]
-      :: [[@ thread 20 :: []] :: []]
-      :: [[@ thread 21 :: []] :: []]
-      :: [[@ thread 22 :: []] :: []]
-      :: [[@ thread 23 :: []] :: []] :: []]
+[
+[[
+  [[[@ thread 0 :: @ thread 1 :: @ thread 2 :: @ thread 3
+  :: @ thread 4 :: @ thread 5 :: @ thread 6 :: @ thread 7
+  :: []] :: []] :: []] :: []]
+  :: [
+  [[[@ thread 8 :: @ thread 9 :: @ thread 10 :: @ thread 11
+  :: @ thread 12 :: @ thread 13 :: @ thread 14 :: @ thread 15
+  :: []] :: []] :: []] :: []]
 :: []]
-:: [[[[@ thread 8 :: []] :: []]
-      :: [[@ thread 9 :: []] :: []]
-      :: [[@ thread 10 :: []] :: []]
-      :: [[@ thread 11 :: []] :: []]
-      :: [[@ thread 12 :: []] :: []]
-      :: [[@ thread 13 :: []] :: []]
-      :: [[@ thread 14 :: []] :: []]
-      :: [[@ thread 15 :: []] :: []] :: []]
-:: [[[@ thread 24 :: []] :: []]
-      :: [[@ thread 25 :: []] :: []]
-      :: [[@ thread 26 :: []] :: []]
-      :: [[@ thread 27 :: []] :: []]
-      :: [[@ thread 28 :: []] :: []]
-      :: [[@ thread 29 :: []] :: []]
-      :: [[@ thread 30 :: []] :: []]
-      :: [[@ thread 31 :: []] :: []] :: []]
-:: []] :: []] :: []].
+:: [[
+  [[[@ thread 16 :: @ thread 17 :: @ thread 18 :: @ thread 19
+  :: @ thread 20 :: @ thread 21 :: @ thread 22 :: @ thread 23
+  :: []] :: []] :: []] :: []]
+  :: [
+  [[[@ thread 24 :: @ thread 25 :: @ thread 26 :: @ thread 27
+  :: @ thread 28 :: @ thread 29 :: @ thread 30 :: @ thread 31
+  :: []] :: []] :: []] :: []]
+:: []]
+:: []].
 Proof.
   simpl.
   rewrite Warp_size_value.
@@ -312,12 +299,16 @@ Qed.
 (* gpu.grid⟨xy⟨2, 2⟩, xy⟨4, 4⟩⟩.blocks.forall(y) *)
 Example example :
   to_list (for_all (blocks (Grid (XY 2 2) (XY 4 4))) _y) =
-[[[[@ block (XY 4 4) (0, 0, 0) (fun i j k : nat => (0, 0, 0, (i, j, k))) :: []] :: []]
-  :: [[@ block (XY 4 4) (1, 0, 0) (fun i j k : nat => (1, 0, 0, (i, j, k))) :: []] :: []] :: []]
-:: 
-[[[@ block (XY 4 4) (0, 1, 0) (fun i j k : nat => (0, 1, 0, (i, j, k))) :: []] :: []]
-  :: [[@ block (XY 4 4) (1, 1, 0) (fun i j k : nat => (1, 1, 0, (i, j, k))) :: []] :: []]
-:: []] :: []].
+[
+  [[[@ block (XY 4 4) (0, 0, 0) (fun i j k : nat => (0, 0, 0, (i, j, k)))
+  :: @ block (XY 4 4) (1, 0, 0) (fun i j k : nat => (1, 0, 0, (i, j, k)))
+  :: []]
+:: []] :: []]
+  :: [[[@ block (XY 4 4) (0, 1, 0) (fun i j k : nat => (0, 1, 0, (i, j, k)))
+  :: @ block (XY 4 4) (1, 1, 0) (fun i j k : nat => (1, 1, 0, (i, j, k)))
+  :: []]
+:: []] :: []]
+:: []].
 Proof.
   simpl.
   reflexivity.
