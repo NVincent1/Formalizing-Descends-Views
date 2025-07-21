@@ -9,10 +9,10 @@ From Views.Execution_resources Require Import sets_of_threads.
 Require Import PeanoNat.
 
 Proposition warp_correct_block :
-  forall x y z idx idy idz i n f f',
+  forall x y z idx idy idz,
   let b := block (x,y,z) (idx,idy,idz) (build_block (x,y,z) (idx,idy,idz)) in
   let b' := block (next_multiple x Warp_size,y,z) (idx,idy,idz) (build_block (next_multiple x Warp_size,y,z) (idx,idy,idz)) in
-  Warp_size <> 0 ->
+  forall i n f f', Warp_size <> 0 ->
   count i (physical_thread_set (warps b f) f') n ->
   count i (map f (thread_set' b')) n.
 Proof.

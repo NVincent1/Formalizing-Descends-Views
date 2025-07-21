@@ -657,3 +657,162 @@ Proof.
     apply cat_count. apply H2. apply H3.
     apply IHdx. split. apply H4. apply H0.
 Qed.
+
+Fixpoint sz {T : Type} (l : List T) :=
+  match l with
+  | [] => 0
+  | h::tl => S (sz tl)
+end.
+
+Inductive contains {T : Type} : T -> List T -> Prop :=
+  | contains_eq (x : T) (l : List T) : contains x (x::l)
+  | contains_cons (x : T) (h : T) (l : List T) (Hcons : contains x l) : contains x (h::l)
+.
+
+Proposition contains_count :
+  forall T (x : T) l,
+    contains x l <-> (forall n, count x l n -> n > 0).
+Proof.
+  induction l.
+  - split; intros. inversion H. assert (count x [] 0). apply empty. apply H in H0. inversion H0.
+  - split; intros.
+    * inversion H; subst.
+      + inversion H0; subst. apply le_n_S. apply le_0_n. exfalso. apply Hneq. reflexivity.
+      + inversion H0; subst. apply le_n_S. apply le_0_n.
+        apply IHl with (n := n) in Hcons. apply Hcons. apply H5.
+    * assert (x = h \/ x <> h). apply excluded_middle.
+      destruct H0. subst. apply contains_eq. apply contains_cons. apply IHl.
+      intros. apply cons_neq with (y := h) in H1.
+      apply H in H1. apply H1. apply H0.
+Qed.
+
+Proposition contains_reorder :
+  forall T (y : T) l,
+  contains y l -> exists l2, (forall x n, count x l n <-> count x (y::l2) n).
+Proof.
+  induction l.
+  - intros. inversion H.
+  - intros. inversion H; subst.
+    + exists l. split;intros; apply H0.
+    + apply IHl in Hcons as Hex.
+    destruct Hex as [l' Hex]. exists (h :: l').
+    intros. split;intros.
+    -- rewrite cons_cat. rewrite count_reorder.
+    simpl. inversion H0; subst.
+      * apply cons_eq. apply Hex. apply H5.
+      * apply cons_neq. apply Hex. apply H5. apply Hneq.
+    -- rewrite cons_cat in H0. rewrite count_reorder in H0.
+    simpl. inversion H0; subst.
+      * apply cons_eq. apply Hex. apply H5.
+      * apply cons_neq. apply Hex. apply H5. apply Hneq.
+Qed.
+
+Proposition contains_reorder_map :
+  forall T T' y (f : T -> T') l,
+  contains (f y) (map f l) -> contains y l -> exists l2, (forall x n, count (f x) (map f l) n <-> count (f x) (map f (y::l2)) n) /\ (forall x n, count x l n <-> count x (y::l2) n).
+Proof.
+  induction l.
+  - intros. inversion H.
+  - intros. inversion H0; subst.
+    + exists l. split;split;intro;apply H1.
+    + apply IHl in Hcons as Hex.
+    destruct Hex as [l' Hex]. exists (h :: l').
+    intros. split;split;intros.
+    -- simpl. rewrite cons_cat. rewrite count_reorder.
+    simpl. inversion H1; subst.
+      * apply cons_eq. apply Hex. apply H6.
+      * apply cons_neq. apply Hex. apply H6. apply Hneq.
+    -- simpl in H1. rewrite cons_cat in H1. rewrite count_reorder in H1.
+    simpl. inversion H1; subst.
+      * apply cons_eq. apply Hex. apply H6.
+      * apply cons_neq. apply Hex. apply H6. apply Hneq.
+    -- simpl. rewrite cons_cat. rewrite count_reorder.
+    simpl. inversion H1; subst.
+      * apply cons_eq. apply Hex. apply H6.
+      * apply cons_neq. apply Hex. apply H6. apply Hneq.
+    -- simpl in H1. rewrite cons_cat in H1. rewrite count_reorder in H1.
+    simpl. inversion H1; subst.
+      * apply cons_eq. apply Hex. apply H6.
+      * apply cons_neq. apply Hex. apply H6. apply Hneq.
+    -- clear H0. clear H. clear IHl. induction l.
+      * inversion Hcons.
+      * simpl. inversion Hcons. apply contains_eq.
+        apply contains_cons. apply IHl. apply Hcons0.
+Qed.
+
+Lemma contains_map :
+  forall T T' x l (f : T -> T'),
+  contains x l -> contains (f x) (map f l).
+Proof.
+  induction l.
+  - intros. inversion H.
+  - intros. simpl. inversion H. apply contains_eq.
+    subst. apply contains_cons. apply IHl. apply Hcons.
+Qed.
+
+Proposition map_injection_aux :
+  forall T T' n l1 l2 (f : T -> T'), sz l1 = n ->
+    (forall a n, count a l1 n -> count a l2 n) ->
+    (forall a n, count (f a) (map f l1) n -> count (f a) (map f l2) n).
+Proof.
+  induction n;destruct l1;destruct l2;intros;try (inversion H).
+  - apply H1.
+  - assert (count h [] 0). apply empty.
+  apply H0 in H2. inversion H2; subst. exfalso. apply Hneq. reflexivity.
+  - assert (count h [] 0). apply empty.
+  apply count_impl_equiv with (l1 := (h :: l1)) in H2. inversion H2; subst.
+  exfalso. apply Hneq. reflexivity.
+  apply H0.
+  - assert (contains h (h0 :: l2)).
+    apply contains_count. intros.
+    assert (exists n, count h (h :: l1) (S n)).
+      assert (exists m, count h (l1) m). apply count_exists. destruct H4. apply cons_eq in H4.
+      exists x. apply H4.
+    destruct H4 as [m H4].
+    apply H0 in H4. apply count_unicity with (m := n1) in H4.
+    subst. apply le_n_S. apply le_0_n. apply H2.
+    apply contains_map with (f := f) in H2 as H4.
+    apply contains_reorder_map with (f := f) in H2. destruct H2 as [l2' [H2 H2']].
+    apply H2. simpl in *.
+    inversion H1.
+      + apply IHn with (l2 := l2') (f := f) (a := a) (n := n1) in H3.
+        apply cons_eq. apply H3.
+        intros. subst. assert (exists m, count a0 (h::l1) m). apply count_exists.
+        destruct H3 as [m H3].
+        inversion H3; subst; apply H0 in H3; apply H2' in H3; apply count_unicity with (m := n2) in H12;subst;
+          inversion H3;subst.
+        * apply H11.
+        * exfalso. apply Hneq. reflexivity.
+        * apply H10.
+        * exfalso. apply Hneq. reflexivity.
+        * exfalso. apply Hneq. reflexivity.
+        * apply H12.
+        * exfalso. apply Hneq. reflexivity.
+        * apply H10.
+        * apply H9.
+      + apply IHn with (l2 := l2') (f := f) (a := a) (n := n0) in H3.
+        apply cons_neq. apply H3. apply Hneq.
+        intros. subst. assert (exists m, count a0 (h::l1) m). apply count_exists.
+        destruct H3 as [m H3].
+        inversion H3; subst; apply H0 in H3; apply H2' in H3; apply count_unicity with (m := n2) in H11;subst;
+          inversion H3;subst.
+        * assumption.
+        * exfalso. apply Hneq0. reflexivity.
+        * assumption.
+        * exfalso. apply Hneq0. reflexivity.
+        * exfalso. apply Hneq0. reflexivity.
+        * assumption.
+        * exfalso. apply Hneq0. reflexivity.
+        * assumption.
+        * assumption.
+      + apply H4.
+Qed.
+
+Proposition map_injection :
+  forall T T' l1 l2 (f : T -> T'),
+    (forall a n, count a l1 n -> count a l2 n) ->
+    (forall a n, count (f a) (map f l1) n -> count (f a) (map f l2) n).
+Proof.
+  intros. apply map_injection_aux with (l1 := l1) (n := sz l1).
+  reflexivity. apply H. apply H0.
+Qed.

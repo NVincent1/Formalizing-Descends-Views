@@ -63,19 +63,20 @@ end.
 Fixpoint thread_set' (e : execution_resource) : List ThreadId_t :=
   match e with
   | Collection n v => zip (buildList n (fun i => thread_set' (v i)))
+  | TensorCollection x y z v => zip (buildList x (fun i => zip (buildList y (fun j => zip (buildList z (fun k => thread_set' (v i j k)))))))
   | grid (x,y,z) (x',y',z') g => thread_set_3xyz x y z (fun b => thread_set_3xyz x' y' z' (fun x => x :: []) b) g
   | block (x,y,z) _ b => thread_set_3xyz x y z (fun x => x :: []) b
   | lthread i => i::[]
   | _ => []
 end.
 
-(** TODO : add physical address translation of blocks, grids and lthreads *)
 Fixpoint physical_thread_set (e : execution_resource) (f : ThreadId_t -> PhysicalId_t) : List PhysicalId_t :=
   match e with
   | Collection n v => zip (buildList n (fun i => physical_thread_set (v i) f))
+  | TensorCollection x y z v => zip (buildList x (fun i => zip (buildList y (fun j => zip (buildList z (fun k => physical_thread_set (v i j k) f))))))
   | thread i => i::[]
   | warp w => buildList Warp_size (fun i => w i)
-  | _ => []
+  | _ => map f (thread_set' e)
 end.
 
 
@@ -84,3 +85,4 @@ Inductive count {T : Type} : T -> List T -> nat -> Prop :=
   | cons_eq (x : T) (tl : List T) {n : nat} (H : count x tl n) : count x (x::tl) (S n)
   | cons_neq (x : T) (y : T) (tl : List T) {n : nat} (H : count x tl n) (Hneq : x <> y) : count x (y::tl) n
 .
+
