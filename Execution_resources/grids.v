@@ -779,6 +779,7 @@ Qed.
 
 
 Proposition grid_correct :
+  (** Grid does not contain indices that are not supposed to be here *)
   forall x y z x' y' z' i j k i' j' k',
     ((i' >= x' \/ j' >= y' \/ k' >= z') \/ (i >= x \/ j >= y \/ k >= z)) ->
     count ((i,j,k),(i',j',k')) (thread_set_3xyz x y z (fun b => thread_set_3xyz x' y' z' (fun x => x :: []) b) 
@@ -788,6 +789,7 @@ Proof.
 Qed.
 
 Proposition grid_complete :
+  (** Grid contains indicies that it should contain exactly once *)
   forall x y z x' y' z' i j k i' j' k',
   i' < x' -> j' < y' -> k' < z' -> i < x -> j < y -> k < z ->
   count ((i,j,k),(i',j',k')) (thread_set_3xyz x y z (fun b => thread_set_3xyz x' y' z' (fun x => x :: []) b) 
@@ -795,160 +797,5 @@ Proposition grid_complete :
 Proof.
   apply grid_contain_smaller_on_xyz.
 Qed.
-
-
-Proposition blocks_correct :
-  forall i e m,
-  no_error e blocks -> count i (thread_set' e) m -> count i (thread_set' (blocks e)) m
-.
-Proof.
-  induction e; intros; try (exfalso; apply H; reflexivity).
-  - destruct shp as [[x y] z], shp' as [[x' y'] z']. simpl in *.
-    rewrite grid_ok_xyz in H0. apply H0.
-  - simpl in *. assert (forall i n v n0,
-          (forall n' n0, n' < n ->
-                count i (thread_set' (v n')) n0 ->
-                count i (thread_set' (blocks (v n'))) n0) ->
-            count i (zip (buildList n (fun i : nat => thread_set' (v i)))) n0 ->
-            count i (zip (buildList n (fun i0 : nat => thread_set' (blocks (v i0))))) n0). {
-        clear.
-        induction n.
-        + intros. apply H0.
-        + intros. simpl in *.
-        apply cat_count_rev in H0.
-        destruct H0 as [m [m' [H0 [H1 H2]]]]. subst.
-        apply cat_count.
-        apply H. apply le_n. apply H0.
-        apply IHn. intros. apply le_S in H2. apply H with (n0 := n0) in H2. apply H2. apply H3.
-        apply H1.
-    }
-    apply H2. intros.
-    apply H with (n := n') (m := n0) in H0.
-    apply H0. apply H3. apply H4. apply H1.
-  - simpl in *. assert (forall a x y z v n,
-          (forall i j k n, i < x -> j < y -> k < z ->
-                count a (thread_set' (v i j k)) n ->
-                count a (thread_set' (blocks (v i j k))) n) ->
-            count a (thread_set' (TensorCollection x y z v)) n ->
-            count a (thread_set' (blocks (TensorCollection x y z v))) n). {
-        clear.
-        induction x.
-        + intros. apply H0.
-        + intros. simpl in *.
-          apply cat_count_rev in H0.
-          destruct H0 as [m [m' [H0 [H1 H2]]]]. subst.
-          apply cat_count. clear H1. clear IHx.
-          generalize dependent m. induction y.
-          - intros. apply H0.
-          - intros. simpl in *. apply cat_count_rev in H0.
-            destruct H0 as [m0 [m0' [H0 [H1 H2]]]]. subst.
-            apply cat_count. clear H1. clear IHy.
-            generalize dependent m0. induction z.
-            * intros. apply H0.
-            * intros. simpl in *. apply cat_count_rev in H0.
-              destruct H0 as [m1 [m1' [H0 [H1 H2]]]]. subst.
-              apply cat_count. apply H. apply le_n. apply le_n. apply le_n.
-              apply H0. apply IHz. intros. apply H.
-              apply H2. apply H3. apply le_S in H4. apply H4. apply H5.
-              apply H1.
-          * apply IHy. intros. apply H.
-          apply H2. apply le_S in H3. apply H3. apply H4. apply H5.
-          apply H1.
-        - apply IHx. intros. apply H.
-        apply le_S in H2. apply H2. apply H3. apply H4. apply H5.
-        apply H1.
-    }
-    apply H2. intros.
-    apply (H i0 j k) with (m := n) in H0.
-    apply H0. apply H3. apply H4. apply H5. apply H6. apply H1.
-Qed.
-
-
-Proposition blocks_correct_physical :
-  forall i e m f,
-  no_error e blocks -> count i (physical_thread_set e f) m -> count i (physical_thread_set (blocks e) f) m
-.
-Proof.
-  induction e; intros; try (exfalso; apply H; reflexivity).
-  - destruct shp as [[x y] z], shp' as [[x' y'] z']. simpl in *.
-    rewrite grid_ok_xyz in H0.
-    clear H. generalize dependent m. induction x.
-    + intros. apply H0.
-    + intros. simpl in *.
-      rewrite map_cat in H0. apply cat_count_rev in H0.
-      destruct H0 as [m0 [m0' [H0 [H1 H2]]]]. subst.
-      apply cat_count. clear H1. clear IHx.
-      generalize dependent m0. induction y.
-      * intros. apply H0.
-      * intros. simpl in *.
-        rewrite map_cat in H0. apply cat_count_rev in H0.
-        destruct H0 as [m1 [m1' [H0 [H1 H2]]]]. subst.
-        apply cat_count. clear H1. clear IHy.
-        generalize dependent m1. induction z.
-        --  intros. apply H0.
-        --  intros. simpl in *.
-            rewrite map_cat in H0. apply cat_count_rev in H0.
-            destruct H0 as [m2 [m2' [H0 [H1 H2]]]]. subst.
-            apply cat_count. apply H0. apply IHz. apply H1.
-      -- apply IHy. apply H1.
-    * apply IHx. apply H1.
-  - simpl in *. assert (forall i n v n0,
-          (forall n' n0, n' < n ->
-                count i (physical_thread_set (v n') f) n0 ->
-                count i (physical_thread_set (blocks (v n')) f) n0) ->
-            count i (zip (buildList n (fun i : nat => physical_thread_set (v i) f))) n0 ->
-            count i (zip (buildList n (fun i0 : nat => physical_thread_set (blocks (v i0)) f))) n0). {
-        clear.
-        induction n.
-        + intros. apply H0.
-        + intros. simpl in *.
-        apply cat_count_rev in H0.
-        destruct H0 as [m [m' [H0 [H1 H2]]]]. subst.
-        apply cat_count.
-        apply H. apply le_n. apply H0.
-        apply IHn. intros. apply le_S in H2. apply H with (n0 := n0) in H2. apply H2. apply H3.
-        apply H1.
-    }
-    apply H2. intros.
-    apply H with (n := n') (m := n0) (f := f) in H0.
-    apply H0. apply H3. apply H4. apply H1.
-  - simpl in *. assert (forall a x y z v n,
-          (forall i j k n, i < x -> j < y -> k < z ->
-                count a (physical_thread_set (v i j k) f) n ->
-                count a (physical_thread_set (blocks (v i j k)) f) n) ->
-            count a (physical_thread_set (TensorCollection x y z v) f) n ->
-            count a (physical_thread_set (blocks (TensorCollection x y z v)) f) n). {
-        clear.
-        induction x.
-        + intros. apply H0.
-        + intros. simpl in *.
-          apply cat_count_rev in H0.
-          destruct H0 as [m [m' [H0 [H1 H2]]]]. subst.
-          apply cat_count. clear H1. clear IHx.
-          generalize dependent m. induction y.
-          - intros. apply H0.
-          - intros. simpl in *. apply cat_count_rev in H0.
-            destruct H0 as [m0 [m0' [H0 [H1 H2]]]]. subst.
-            apply cat_count. clear H1. clear IHy.
-            generalize dependent m0. induction z.
-            * intros. apply H0.
-            * intros. simpl in *. apply cat_count_rev in H0.
-              destruct H0 as [m1 [m1' [H0 [H1 H2]]]]. subst.
-              apply cat_count. apply H. apply le_n. apply le_n. apply le_n.
-              apply H0. apply IHz. intros. apply H.
-              apply H2. apply H3. apply le_S in H4. apply H4. apply H5.
-              apply H1.
-          * apply IHy. intros. apply H.
-          apply H2. apply le_S in H3. apply H3. apply H4. apply H5.
-          apply H1.
-        - apply IHx. intros. apply H.
-        apply le_S in H2. apply H2. apply H3. apply H4. apply H5.
-        apply H1.
-    }
-    apply H2. intros.
-    apply (H i0 j k) with (m := n) (f := f) in H0.
-    apply H0. apply H3. apply H4. apply H5. apply H6. apply H1.
-Qed.
-
 
 

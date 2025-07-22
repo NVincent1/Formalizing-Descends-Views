@@ -90,7 +90,7 @@ Proof.
       * intros. simpl in *. rewrite cat_empty. apply cat_count_rev in H1.
       destruct H1 as [m1 [m2 [H1 [H2 H3]]]]; subst.
       apply cat_count. apply H1. apply IHx. apply H2.
-      ++ simpl in *. exfalso. apply H0. reflexivity.
+      ++ simpl in *. inversion H2. apply le_0_n.
     + simpl in *. destruct (r <=? y) eqn:E.
       ++ simpl in *. apply leb_correct in E.
       apply zip_buildlist_inclusion with (f := (fun i : nat =>
@@ -114,7 +114,7 @@ Proof.
         apply cat_count. rewrite cat_empty. apply H1. apply IHy.
         apply H2.
       apply IHx. apply H2.
-      ++ simpl in *. exfalso. apply H0. reflexivity.
+      ++ simpl in *. inversion H2. apply le_0_n.
     + simpl in *. destruct (r <=? z) eqn:E.
       ++ simpl in *. apply leb_correct in E.
       apply zip_buildlist_inclusion with (f := (fun i : nat =>
@@ -144,7 +144,7 @@ Proof.
             apply H2.
         apply IHy. apply H2.
       apply IHx. apply H2.
-      ++ simpl in *. exfalso. apply H0. reflexivity.
+      ++ simpl in *. inversion H2. apply le_0_n.
 Qed.
 
 Proposition select_error :
@@ -231,7 +231,7 @@ Proof.
       * intros. simpl in *. rewrite cat_empty. apply cat_count_rev in H1.
       destruct H1 as [m1 [m2 [H1 [H2 H3]]]]; subst.
       apply cat_count. apply H1. apply IHx. apply H2.
-      ++ simpl in *. exfalso. apply H0. reflexivity.
+      ++ simpl in *. inversion H2. apply le_0_n.
     + simpl in *. destruct (r <=? y) eqn:E.
       ++ simpl in *. apply leb_correct in E.
       apply zip_buildlist_inclusion with (f := (fun i : nat =>
@@ -255,7 +255,7 @@ Proof.
         apply cat_count. rewrite cat_empty. apply H1. apply IHy.
         apply H2.
       apply IHx. apply H2.
-      ++ simpl in *. exfalso. apply H0. reflexivity.
+      ++ simpl in *. inversion H2. apply le_0_n.
     + simpl in *. destruct (r <=? z) eqn:E.
       ++ simpl in *. apply leb_correct in E.
       apply zip_buildlist_inclusion with (f := (fun i : nat =>
@@ -285,6 +285,6 @@ Proof.
             apply H2.
         apply IHy. apply H2.
       apply IHx. apply H2.
-      ++ simpl in *. exfalso. apply H0. reflexivity.
+      ++ simpl in *. inversion H2. apply le_0_n.
 Qed.
 
