@@ -86,3 +86,9 @@ Inductive count {T : Type} : T -> List T -> nat -> Prop :=
   | cons_neq (x : T) (y : T) (tl : List T) {n : nat} (H : count x tl n) (Hneq : x <> y) : count x (y::tl) n
 .
 
+Fixpoint no_error (e : execution_resource) (f : execution_resource -> execution_resource) : Prop :=
+  match e with
+  | Collection n v => forall i, i < n -> (no_error (v i) f)
+  | _ => f e <> Error
+end.
+

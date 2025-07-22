@@ -6,12 +6,6 @@ From Views.Execution_resources Require Import correctness_lemmas.
 From Views.Execution_resources Require Import sets_of_threads.
 Require Import PeanoNat.
 
-Fixpoint forall_no_error (e : execution_resource) (d : dimension) : Prop :=
-  match e with
-  | Collection n v => forall i, i < n -> (forall_no_error (v i) d)
-  | _ => for_all e d <> Error
-end.
-
 Proposition induction_step_collection_forall :
   forall i n v n0 d,
 (forall n' n0, n' < n -> count i (thread_set' (v n')) n0 ->
@@ -52,7 +46,7 @@ Qed.
 
 Proposition for_all_correct :
   forall i e d m,
-  forall_no_error e d -> count i (thread_set' e) m -> count i (thread_set' (for_all e d)) m
+  no_error e (fun e => for_all e d) -> count i (thread_set' e) m -> count i (thread_set' (for_all e d)) m
 .
 Proof.
   induction e; intros; try (exfalso; apply H; reflexivity).
@@ -123,7 +117,7 @@ Qed.
 
 Proposition for_all_correct_physical :
   forall i e d m f,
-  forall_no_error e d -> count i (physical_thread_set e f) m -> count i (physical_thread_set (for_all e d) f) m
+  no_error e (fun e => for_all e d) -> count i (physical_thread_set e f) m -> count i (physical_thread_set (for_all e d) f) m
 .
 Proof.
   induction e; intros;simpl in *; try (exfalso; apply H; reflexivity).
