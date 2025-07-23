@@ -8,10 +8,10 @@ Require Import PeanoNat.
 
 Proposition induction_step_collection_forall :
   forall i n v n0 d,
-(forall n' n0, n' < n -> count i (thread_set' (v n')) n0 ->
-    count i (thread_set' (for_all (v n') d)) n0) ->
-  count i (zip (buildList n (fun i : nat => thread_set' (v i)))) n0
--> count i (zip (buildList n (fun i0 : nat => thread_set' (for_all (v i0) d))))
+(forall n' n0, n' < n -> count i (logical_thread_set (v n')) n0 ->
+    count i (logical_thread_set (for_all (v n') d)) n0) ->
+  count i (zip (buildList n (fun i : nat => logical_thread_set (v i)))) n0
+-> count i (zip (buildList n (fun i0 : nat => logical_thread_set (for_all (v i0) d))))
   n0.
 Proof.
   induction n.
@@ -46,7 +46,7 @@ Qed.
 
 Proposition for_all_correct :
   forall i e d m,
-  no_error e (fun e => for_all e d) -> count i (thread_set' e) m -> count i (thread_set' (for_all e d)) m
+  no_error e (fun e => for_all e d) -> count i (logical_thread_set e) m -> count i (logical_thread_set (for_all e d)) m
 .
 Proof.
   induction e; intros; try (exfalso; apply H; reflexivity).

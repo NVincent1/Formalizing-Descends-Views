@@ -12,7 +12,7 @@ Theorem physical_thread_correct :
   (** Correctness of physical_thread_set for all execution resources except warps and threads :
     for an injective indices translation function, it preserves the indices in the set of logical threads *)
   forall f, (forall x y, f x = f y -> x = y) ->
-  forall a e n, not_physical e -> count a (thread_set' e) n -> count (f a) (physical_thread_set e f) n.
+  forall a e n, not_physical e -> count a (logical_thread_set e) n -> count (f a) (physical_thread_set e f) n.
 Proof.
   induction e; intros; simpl in *.
   - exfalso. destruct H0. apply (H2 t). reflexivity.
@@ -23,9 +23,9 @@ Proof.
   - destruct shp as [[x y] z]. apply map_injection. apply H. apply H1.
   - assert (forall i n v n0 f,
           (forall n' n0, n' < n ->
-                count i (thread_set' (v n')) n0 ->
+                count i (logical_thread_set (v n')) n0 ->
                 count (f i) (physical_thread_set (v n') f) n0) ->
-            count i (thread_set' (Collection n v)) n0 ->
+            count i (logical_thread_set (Collection n v)) n0 ->
             count (f i) (physical_thread_set (Collection n v) f) n0). {
       clear. induction n.
       - intros. simpl in *.  inversion H0; subst. apply empty.
@@ -37,9 +37,9 @@ Proof.
     apply H1. apply Hn. apply H2.
   - assert (forall a x y z v n f,
           (forall i j k n, i < x -> j < y -> k < z ->
-                count a (thread_set' (v i j k)) n ->
+                count a (logical_thread_set (v i j k)) n ->
                 count (f a) (physical_thread_set (v i j k) f) n) ->
-            count a (thread_set' (TensorCollection x y z v)) n ->
+            count a (logical_thread_set (TensorCollection x y z v)) n ->
             count (f a) (physical_thread_set (TensorCollection x y z v) f) n). {
         clear.
         induction x.
@@ -353,7 +353,7 @@ Qed.
 Proposition blocks_correct :
   (** e.blocks conserves the same set of threads *)
   forall i e m,
-  no_error e blocks -> count i (thread_set' e) m -> count i (thread_set' (blocks e)) m
+  no_error e blocks -> count i (logical_thread_set e) m -> count i (logical_thread_set (blocks e)) m
 .
 Proof.
   induction e; intros; try (exfalso; apply H; reflexivity).
@@ -361,10 +361,10 @@ Proof.
     rewrite grid_ok_xyz in H0. apply H0.
   - simpl in *. assert (forall i n v n0,
           (forall n' n0, n' < n ->
-                count i (thread_set' (v n')) n0 ->
-                count i (thread_set' (blocks (v n'))) n0) ->
-            count i (zip (buildList n (fun i : nat => thread_set' (v i)))) n0 ->
-            count i (zip (buildList n (fun i0 : nat => thread_set' (blocks (v i0))))) n0). {
+                count i (logical_thread_set (v n')) n0 ->
+                count i (logical_thread_set (blocks (v n'))) n0) ->
+            count i (zip (buildList n (fun i : nat => logical_thread_set (v i)))) n0 ->
+            count i (zip (buildList n (fun i0 : nat => logical_thread_set (blocks (v i0))))) n0). {
         clear.
         induction n.
         + intros. apply H0.
@@ -381,10 +381,10 @@ Proof.
     apply H0. apply H3. apply H4. apply H1.
   - simpl in *. assert (forall a x y z v n,
           (forall i j k n, i < x -> j < y -> k < z ->
-                count a (thread_set' (v i j k)) n ->
-                count a (thread_set' (blocks (v i j k))) n) ->
-            count a (thread_set' (TensorCollection x y z v)) n ->
-            count a (thread_set' (blocks (TensorCollection x y z v))) n). {
+                count a (logical_thread_set (v i j k)) n ->
+                count a (logical_thread_set (blocks (v i j k))) n) ->
+            count a (logical_thread_set (TensorCollection x y z v)) n ->
+            count a (logical_thread_set (blocks (TensorCollection x y z v))) n). {
         clear.
         induction x.
         + intros. apply H0.
@@ -509,7 +509,7 @@ Qed.
 Proposition threads_correct :
   (** e.threads conserves the same set of threads *)
   forall i e m,
-  no_error e threads -> count i (thread_set' e) m -> count i (thread_set' (threads e)) m
+  no_error e threads -> count i (logical_thread_set e) m -> count i (logical_thread_set (threads e)) m
 .
 Proof.
   induction e; intros; try (exfalso; apply H; reflexivity).
@@ -588,10 +588,10 @@ Proof.
       * apply IHx. apply H1.
   - simpl in *. assert (forall i n v n0,
           (forall n' n0, n' < n ->
-                count i (thread_set' (v n')) n0 ->
-                count i (thread_set' (threads (v n'))) n0) ->
-            count i (zip (buildList n (fun i : nat => thread_set' (v i)))) n0 ->
-            count i (zip (buildList n (fun i0 : nat => thread_set' (threads (v i0))))) n0). {
+                count i (logical_thread_set (v n')) n0 ->
+                count i (logical_thread_set (threads (v n'))) n0) ->
+            count i (zip (buildList n (fun i : nat => logical_thread_set (v i)))) n0 ->
+            count i (zip (buildList n (fun i0 : nat => logical_thread_set (threads (v i0))))) n0). {
         clear.
         induction n.
         + intros. apply H0.
@@ -608,10 +608,10 @@ Proof.
     apply H0. apply H3. apply H4. apply H1.
   - simpl in *. assert (forall a x y z v n,
           (forall i j k n, i < x -> j < y -> k < z ->
-                count a (thread_set' (v i j k)) n ->
-                count a (thread_set' (threads (v i j k))) n) ->
-            count a (thread_set' (TensorCollection x y z v)) n ->
-            count a (thread_set' (threads (TensorCollection x y z v))) n). {
+                count a (logical_thread_set (v i j k)) n ->
+                count a (logical_thread_set (threads (v i j k))) n) ->
+            count a (logical_thread_set (TensorCollection x y z v)) n ->
+            count a (logical_thread_set (threads (TensorCollection x y z v))) n). {
         clear.
         induction x.
         + intros. apply H0.

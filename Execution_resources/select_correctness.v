@@ -9,10 +9,10 @@ Require Import PeanoNat.
 
 Proposition induction_step_collection_select :
   forall i n v m m' d l r,
-(forall n' n0 n0', n' < n -> count i (thread_set' (v n')) n0 ->
-    count i (thread_set' (select_range (v n') l r d)) n0' -> n0' <= n0) ->
-  count i (zip (buildList n (fun i : nat => thread_set' (v i)))) m
--> count i (zip (buildList n (fun i0 : nat => thread_set' (select_range (v i0) l r d)))) m'
+(forall n' n0 n0', n' < n -> count i (logical_thread_set (v n')) n0 ->
+    count i (logical_thread_set (select_range (v n') l r d)) n0' -> n0' <= n0) ->
+  count i (zip (buildList n (fun i : nat => logical_thread_set (v i)))) m
+-> count i (zip (buildList n (fun i0 : nat => logical_thread_set (select_range (v i0) l r d)))) m'
 -> m' <= m.
 Proof.
   induction n.
@@ -24,8 +24,8 @@ Proof.
   destruct H0 as [m1 [m2 [H0 [H1 H2]]]]. subst.
   assert (forall n' n0 n0' : nat,
     n' < n ->
-    count i (thread_set' (v n')) n0 ->
-    count i (thread_set' (select_range (v n') l r d)) n0' -> n0' <= n0).
+    count i (logical_thread_set (v n')) n0 ->
+    count i (logical_thread_set (select_range (v n') l r d)) n0' -> n0' <= n0).
     intros. apply le_S in H2. apply H with (n0 := n0) (n0' := n0')in H2.
     apply H2. apply H3. apply H4.
   apply H with (n0 := m1) in H0'.
@@ -66,7 +66,7 @@ Qed.
 
 Proposition select_correct :
   forall i e d m m' l r,
-  no_error e (fun e => select_range e l r d) -> count i (thread_set' e) m -> count i (thread_set' (select_range e l r d)) m' -> m' <= m
+  no_error e (fun e => select_range e l r d) -> count i (logical_thread_set e) m -> count i (logical_thread_set (select_range e l r d)) m' -> m' <= m
 .
 Proof.
   induction e;intros; try (exfalso; apply H; reflexivity).
@@ -80,7 +80,7 @@ Proof.
               zip
                 (buildList y
                    (fun j : nat =>
-                    zip (buildList z (fun k : nat => thread_set' (content i j k))))) ++ []))
+                    zip (buildList z (fun k : nat => logical_thread_set (content i j k))))) ++ []))
         (a := l) (m := m) (m' := m') (i := i)
       in E.
       apply E. apply H2.
@@ -97,7 +97,7 @@ Proof.
               zip
                 (buildList x
                    (fun i0 : nat =>
-                    zip (buildList z (fun k : nat => thread_set' (content i0 i k))) ++ []))))
+                    zip (buildList z (fun k : nat => logical_thread_set (content i0 i k))) ++ []))))
         (a := l) (m := m) (m' := m') (i := i)
       in E.
       apply E. apply H2.
@@ -121,7 +121,7 @@ Proof.
               zip
                 (buildList x
                    (fun i0 : nat =>
-                    zip (buildList y (fun j : nat => thread_set' (content i0 j i) ++ []))))))
+                    zip (buildList y (fun j : nat => logical_thread_set (content i0 j i) ++ []))))))
         (a := l) (m := m) (m' := m') (i := i)
       in E.
       apply E. apply H2.

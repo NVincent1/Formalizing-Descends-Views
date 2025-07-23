@@ -8,17 +8,17 @@ Require Import PeanoNat.
 
 Proposition collection_correct :
   forall a n (v : Vector execution_resource n),
-      exists (m : Vector nat n), (forall i, i < n -> count a (thread_set' (v i)) (m i)) ->
-      count a (thread_set' (Collection n v)) (sum m)
+      exists (m : Vector nat n), (forall i, i < n -> count a (logical_thread_set (v i)) (m i)) ->
+      count a (logical_thread_set (Collection n v)) (sum m)
 .
 Proof.
   induction n.
     - exists (fun i => i). intros. apply empty.
     - intros. assert (exists m : Vector nat n,
-        (forall i : nat, i < n -> count a (thread_set' (v i)) (m i)) ->
-        count a (thread_set' (Collection n v)) (sum m)). apply IHn.
+        (forall i : nat, i < n -> count a (logical_thread_set (v i)) (m i)) ->
+        count a (logical_thread_set (Collection n v)) (sum m)). apply IHn.
       destruct H.
-      assert (exists m, count a (thread_set' (v n)) m). apply count_exists.
+      assert (exists m, count a (logical_thread_set (v n)) m). apply count_exists.
       destruct H0.
       exists (fun i => if (eqb i n) then x0 else x i).
       intros.
@@ -37,8 +37,8 @@ Qed.
 
 Proposition tensorcollection_correct :
   forall x y z (v : Tensor' execution_resource x y z),
-      thread_set' (TensorCollection x y z v) =
-      thread_set' (Collection x (fun i => Collection y (fun j => (Collection z (fun k => v i j k))))).
+      logical_thread_set (TensorCollection x y z v) =
+      logical_thread_set (Collection x (fun i => Collection y (fun j => (Collection z (fun k => v i j k))))).
 Proof.
   reflexivity.
 Qed.

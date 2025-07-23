@@ -60,10 +60,10 @@ Fixpoint thread_set_3zxy {T : Type} (x y z : nat) (f : T -> List ThreadId_t) : T
   | _ => fun _ => []
 end.
 
-Fixpoint thread_set' (e : execution_resource) : List ThreadId_t :=
+Fixpoint logical_thread_set (e : execution_resource) : List ThreadId_t :=
   match e with
-  | Collection n v => zip (buildList n (fun i => thread_set' (v i)))
-  | TensorCollection x y z v => zip (buildList x (fun i => zip (buildList y (fun j => zip (buildList z (fun k => thread_set' (v i j k)))))))
+  | Collection n v => zip (buildList n (fun i => logical_thread_set (v i)))
+  | TensorCollection x y z v => zip (buildList x (fun i => zip (buildList y (fun j => zip (buildList z (fun k => logical_thread_set (v i j k)))))))
   | grid (x,y,z) (x',y',z') g => thread_set_3xyz x y z (fun b => thread_set_3xyz x' y' z' (fun x => x :: []) b) g
   | block (x,y,z) _ b => thread_set_3xyz x y z (fun x => x :: []) b
   | lthread i => i::[]
@@ -76,7 +76,7 @@ Fixpoint physical_thread_set (e : execution_resource) (f : ThreadId_t -> Physica
   | TensorCollection x y z v => zip (buildList x (fun i => zip (buildList y (fun j => zip (buildList z (fun k => physical_thread_set (v i j k) f))))))
   | thread i => i::[]
   | warp w => buildList Warp_size (fun i => w i)
-  | _ => map f (thread_set' e)
+  | _ => map f (logical_thread_set e)
 end.
 
 

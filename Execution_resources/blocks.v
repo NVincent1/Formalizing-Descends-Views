@@ -505,7 +505,7 @@ Proposition block_correct :
   (** Block does not contain indices that are not supposed to be here *)
   forall idx idy idz idx' idy' idz' x y z i j k,
     ((i >= x \/ j >= y \/ k >= z) \/ (idx' <> idx \/ idy' <> idy \/ idz' <> idz)) ->
-    count ((idx',idy',idz'),(i,j,k)) (thread_set' (Block' (x,y,z) (idx,idy,idz))) 0.
+    count ((idx',idy',idz'),(i,j,k)) (logical_thread_set (Block' (x,y,z) (idx,idy,idz))) 0.
 Proof.
   intros.
   destruct H as [H | H].
@@ -517,7 +517,7 @@ Proposition block_complete :
   (** Block contains indicies that it should contain exactly once *)
   forall idx idy idz x y z i j k,
     i < x -> j < y -> k < z ->
-    count ((idx,idy,idz),(i,j,k)) (thread_set' (Block' (x,y,z) (idx,idy,idz))) 1.
+    count ((idx,idy,idz),(i,j,k)) (logical_thread_set (Block' (x,y,z) (idx,idy,idz))) 1.
 Proof.
   apply block_contain_smaller_on_xyz.
 Qed.
