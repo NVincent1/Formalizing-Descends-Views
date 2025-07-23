@@ -93,4 +93,253 @@ Fixpoint no_error (e : execution_resource) (f : execution_resource -> execution_
   | _ => f e <> Error
 end.
 
+Fixpoint not_physical (e : execution_resource) : Prop :=
+  match e with
+  | Collection n v => forall i, i < n -> (not_physical (v i))
+  | TensorCollection x y z v => forall i j k, i < x -> j < y -> k < z -> (not_physical (v i j k))
+  | _ => (forall w, e <> warp w) /\ (forall i, e <> thread i)
+end.
+
+Lemma empty_list : 
+  forall x T fj,
+  (forall (j : nat), fj j = []) ->
+  zip (buildList x (fun (j:nat) => (fj j : List T))) = [].
+Proof.
+  intros. induction x. reflexivity. simpl. rewrite H. apply IHx.
+Qed.
+
+(** Rewriting thread_set with buildList *)
+Lemma block_ok_z :
+forall b x y z,
+thread_set_1z (S x) (S y) z (fun x0 : ThreadId_t => x0 :: []) b =
+buildList z (fun k => b x y k).
+Proof.
+  induction z.
+    + intros. reflexivity.
+    + intros. simpl. rewrite IHz. reflexivity.
+Qed.
+
+
+Lemma block_ok_y :
+forall b x y z,
+thread_set_1y (S x) y (S z) (fun x0 : ThreadId_t => x0 :: []) b =
+buildList y (fun k => b x k z).
+Proof.
+  induction y.
+    + intros. reflexivity.
+    + intros. simpl. rewrite IHy. reflexivity.
+Qed.
+
+Lemma block_ok_yz :
+forall b x y z,
+thread_set_2yz (S x) y z (fun x0 : ThreadId_t => x0 :: []) b =
+zip (buildList y (fun j => (buildList z (fun k => b x j k)))).
+Proof.
+  induction y.
+    + intros. reflexivity.
+    + intros. simpl in *.
+    destruct z.
+      * simpl. clear. induction y. reflexivity. apply IHy.
+      * simpl. rewrite block_ok_z. rewrite IHy. reflexivity.
+Qed.
+
+Lemma block_ok_xz :
+forall b x y z,
+thread_set_2xz x (S y) z (fun x0 : ThreadId_t => x0 :: []) b =
+zip (buildList x (fun j => (buildList z (fun k => b j y k)))).
+Proof.
+  induction x.
+    + intros. reflexivity.
+    + intros. simpl in *.
+    destruct z.
+      * simpl. clear. induction x. reflexivity. apply IHx.
+      * simpl. rewrite block_ok_z. rewrite IHx. reflexivity.
+Qed.
+
+Lemma block_ok_xy :
+forall b x y z,
+thread_set_2xy x y (S z) (fun x0 : ThreadId_t => x0 :: []) b =
+zip (buildList x (fun j => (buildList y (fun k => b j k z)))).
+Proof.
+  induction x.
+    + intros. reflexivity.
+    + intros. simpl in *.
+    destruct y.
+      * simpl. clear. induction x. reflexivity. apply IHx.
+      * simpl. rewrite block_ok_y. rewrite IHx. reflexivity.
+Qed.
+
+Lemma block_ok_xyz :
+forall b x y z,
+thread_set_3xyz x y z (fun x0 : ThreadId_t => x0 :: []) b =
+zip (buildList x (fun i => (zip (buildList y (fun j => (buildList z (fun k => b i j k))))))).
+Proof.
+  induction x.
+    + intros. reflexivity.
+    + intros. simpl in *.
+    destruct y,z.
+      * simpl. clear. induction x. reflexivity. apply IHx.
+      * simpl. clear. induction x. reflexivity. apply IHx.
+      * simpl. clear. induction x. rewrite empty_list. reflexivity. reflexivity. rewrite empty_list. simpl. rewrite empty_list in IHx. apply IHx. reflexivity. reflexivity.
+      * simpl. rewrite block_ok_z. rewrite block_ok_yz. rewrite IHx. reflexivity.
+Qed.
+
+Lemma block_ok_yxz :
+forall b x y z,
+thread_set_3yxz x y z (fun x0 : ThreadId_t => x0 :: []) b =
+zip (buildList y (fun j => (zip (buildList x (fun i => (buildList z (fun k => b i j k))))))).
+Proof.
+  induction y.
+    + intros. destruct x; reflexivity.
+    + intros. simpl in *.
+    destruct x,z.
+      * simpl. clear. induction y. reflexivity. apply IHy.
+      * simpl. clear. induction y. reflexivity. apply IHy.
+      * simpl. clear. induction y. rewrite empty_list. reflexivity. reflexivity. rewrite empty_list. simpl. rewrite empty_list in IHy. apply IHy. reflexivity. reflexivity.
+      * simpl. rewrite block_ok_z. rewrite block_ok_xz. rewrite IHy. simpl. reflexivity.
+Qed.
+
+Lemma block_ok_zxy :
+forall b z x y,
+thread_set_3zxy x y z (fun x0 : ThreadId_t => x0 :: []) b =
+zip (buildList z (fun k => (zip (buildList x (fun i => (buildList y (fun j => b i j k))))))).
+Proof.
+  induction z.
+    + intros. destruct x,y; reflexivity.
+    + intros. simpl in *.
+    destruct x,y.
+      * simpl. clear. induction z. reflexivity. apply IHz.
+      * simpl. clear. induction z. reflexivity. apply IHz.
+      * simpl. clear. induction z. rewrite empty_list. reflexivity. reflexivity. rewrite empty_list. simpl. rewrite empty_list in IHz. apply IHz. reflexivity. reflexivity.
+      * simpl. rewrite block_ok_y. rewrite block_ok_xy. rewrite IHz. simpl. reflexivity.
+Qed.
+
+Lemma grid_ok_z :
+forall g x y z x' y' z',
+thread_set_1z (S x) (S y) z
+          (fun b : nat -> nat -> nat -> ThreadId_t =>
+           thread_set_3xyz x' y' z' (fun x : ThreadId_t => x :: []) b) g = 
+zip (buildList z (fun k : nat =>
+         thread_set_3xyz x' y' z' (fun x0 : ThreadId_t => x0 :: []) (g x y k))).
+Proof.
+  induction z.
+    + intros. reflexivity.
+    + intros. simpl. rewrite IHz. reflexivity.
+Qed.
+
+Lemma grid_ok_y :
+forall g x y z x' y' z',
+thread_set_1y (S x) y (S z)
+          (fun b : nat -> nat -> nat -> ThreadId_t =>
+           thread_set_3xyz x' y' z' (fun x : ThreadId_t => x :: []) b) g = 
+zip (buildList y (fun k : nat =>
+         thread_set_3xyz x' y' z' (fun x0 : ThreadId_t => x0 :: []) (g x k z))).
+Proof.
+  induction y.
+    + intros. reflexivity.
+    + intros. simpl. rewrite IHy. reflexivity.
+Qed.
+
+Lemma grid_ok_yz :
+forall g x y z x' y' z',
+thread_set_2yz (S x) y z
+          (fun b : nat -> nat -> nat -> ThreadId_t =>
+           thread_set_3xyz x' y' z' (fun x : ThreadId_t => x :: []) b) g = 
+zip (buildList y (fun j => zip (buildList z (fun k : nat =>
+         thread_set_3xyz x' y' z' (fun x0 : ThreadId_t => x0 :: []) (g x j k))))).
+Proof.
+  induction y.
+    + intros. reflexivity.
+    + intros. simpl in *.
+    destruct z.
+      * intros. simpl. clear. induction y. reflexivity. apply IHy.
+      * intros. simpl. rewrite grid_ok_z. rewrite IHy. reflexivity.
+Qed.
+
+Lemma grid_ok_xz :
+forall g x y z x' y' z',
+thread_set_2xz x (S y) z
+          (fun b : nat -> nat -> nat -> ThreadId_t =>
+           thread_set_3xyz x' y' z' (fun x : ThreadId_t => x :: []) b) g = 
+zip (buildList x (fun j => zip (buildList z (fun k : nat =>
+         thread_set_3xyz x' y' z' (fun x0 : ThreadId_t => x0 :: []) (g j y k))))).
+Proof.
+  induction x.
+    + intros. reflexivity.
+    + intros. simpl in *.
+    destruct z.
+      * intros. simpl. clear. induction x. reflexivity. apply IHx.
+      * intros. simpl. rewrite grid_ok_z. rewrite IHx. reflexivity.
+Qed.
+
+Lemma grid_ok_xy :
+forall g x y z x' y' z',
+thread_set_2xy x y (S z)
+          (fun b : nat -> nat -> nat -> ThreadId_t =>
+           thread_set_3xyz x' y' z' (fun x : ThreadId_t => x :: []) b) g = 
+zip (buildList x (fun j => zip (buildList y (fun k : nat =>
+         thread_set_3xyz x' y' z' (fun x0 : ThreadId_t => x0 :: []) (g j k z))))).
+Proof.
+  induction x.
+    + intros. reflexivity.
+    + intros. simpl in *.
+    destruct y.
+      * intros. simpl. clear. induction x. reflexivity. apply IHx.
+      * intros. simpl. rewrite grid_ok_y. rewrite IHx. reflexivity.
+Qed.
+
+Lemma grid_ok_yxz :
+forall g y x z x' y' z',
+thread_set_3yxz x y z
+          (fun b : nat -> nat -> nat -> ThreadId_t =>
+           thread_set_3xyz x' y' z' (fun x : ThreadId_t => x :: []) b) g = 
+zip (buildList y (fun j => zip (buildList x (fun i => zip (buildList z (fun k : nat =>
+         thread_set_3xyz x' y' z' (fun x0 : ThreadId_t => x0 :: []) (g i j k))))))).
+Proof.
+  induction y.
+    + intros. destruct x; reflexivity.
+    + intros. simpl in *.
+    destruct x,z.
+      * simpl. clear. induction y. reflexivity. apply IHy.
+      * simpl. clear. induction y. reflexivity. apply IHy.
+      * simpl. clear. induction y. rewrite empty_list. reflexivity. reflexivity. rewrite empty_list. simpl. rewrite empty_list in IHy. apply IHy. reflexivity. reflexivity.
+      * simpl. rewrite grid_ok_z. rewrite grid_ok_xz. rewrite IHy. reflexivity.
+Qed.
+
+Lemma grid_ok_xyz :
+forall g x y z x' y' z',
+thread_set_3xyz x y z
+          (fun b : nat -> nat -> nat -> ThreadId_t =>
+           thread_set_3xyz x' y' z' (fun x : ThreadId_t => x :: []) b) g = 
+zip (buildList x (fun i => zip (buildList y (fun j => zip (buildList z (fun k : nat =>
+         thread_set_3xyz x' y' z' (fun x0 : ThreadId_t => x0 :: []) (g i j k))))))).
+Proof.
+  induction x.
+    + intros. reflexivity.
+    + intros. simpl in *.
+    destruct y,z.
+      * simpl. clear. induction x. reflexivity. apply IHx.
+      * simpl. clear. induction x. reflexivity. apply IHx.
+      * simpl. clear. induction x. rewrite empty_list. reflexivity. reflexivity. rewrite empty_list. simpl. rewrite empty_list in IHx. apply IHx. reflexivity. reflexivity.
+      * simpl. rewrite grid_ok_z. rewrite grid_ok_yz. rewrite IHx. reflexivity.
+Qed.
+
+Lemma grid_ok_zxy :
+forall g z x y x' y' z',
+thread_set_3zxy x y z
+          (fun b : nat -> nat -> nat -> ThreadId_t =>
+           thread_set_3xyz x' y' z' (fun x : ThreadId_t => x :: []) b) g = 
+zip (buildList z (fun k => zip (buildList x (fun i => zip (buildList y (fun j : nat =>
+         thread_set_3xyz x' y' z' (fun x0 : ThreadId_t => x0 :: []) (g i j k))))))).
+Proof.
+  induction z.
+    + intros. destruct x,y; reflexivity.
+    + intros. simpl in *.
+    destruct x,y.
+      * simpl. clear. induction z. reflexivity. apply IHz.
+      * simpl. clear. induction z. reflexivity. apply IHz.
+      * simpl. clear. induction z. rewrite empty_list. reflexivity. reflexivity. rewrite empty_list. simpl. rewrite empty_list in IHz. apply IHz. reflexivity. reflexivity.
+      * simpl. rewrite grid_ok_y. rewrite grid_ok_xy. rewrite IHz. reflexivity.
+Qed.
+
 

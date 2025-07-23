@@ -8,6 +8,78 @@ From Views.Execution_resources Require Import correctness_lemmas.
 From Views.Execution_resources Require Import sets_of_threads.
 Require Import PeanoNat.
 
+Theorem physical_thread_correct :
+  (** Correctness of physical_thread_set for all execution resources except warps and threads :
+    for an injective indices translation function, it preserves the indices in the set of logical threads *)
+  forall f, (forall x y, f x = f y -> x = y) ->
+  forall a e n, not_physical e -> count a (thread_set' e) n -> count (f a) (physical_thread_set e f) n.
+Proof.
+  induction e; intros; simpl in *.
+  - exfalso. destruct H0. apply (H2 t). reflexivity.
+  - inversion H1; inversion H6; subst. apply cons_eq. apply empty. apply cons_neq. apply empty.
+    intro. apply H in H2. subst. apply Hneq. reflexivity.
+  - destruct H0. exfalso. apply (H0 w). reflexivity.
+  - destruct shp as [[x y] z]. apply map_injection. apply H. apply H1.
+  - destruct shp as [[x y] z]. apply map_injection. apply H. apply H1.
+  - assert (forall i n v n0 f,
+          (forall n' n0, n' < n ->
+                count i (thread_set' (v n')) n0 ->
+                count (f i) (physical_thread_set (v n') f) n0) ->
+            count i (thread_set' (Collection n v)) n0 ->
+            count (f i) (physical_thread_set (Collection n v) f) n0). {
+      clear. induction n.
+      - intros. simpl in *.  inversion H0; subst. apply empty.
+      - intros. simpl in *. apply cat_count_rev in H0.
+      destruct H0 as [m [m' [H0 [H1 H2]]]]; subst. apply cat_count. apply H.
+      apply le_n. apply H0. apply IHn. intros. apply H. apply le_S in H2. apply H2. apply H3.
+      apply H1.
+    } apply H3. intros n' n1 Hn. apply H0.
+    apply H1. apply Hn. apply H2.
+  - assert (forall a x y z v n f,
+          (forall i j k n, i < x -> j < y -> k < z ->
+                count a (thread_set' (v i j k)) n ->
+                count (f a) (physical_thread_set (v i j k) f) n) ->
+            count a (thread_set' (TensorCollection x y z v)) n ->
+            count (f a) (physical_thread_set (TensorCollection x y z v) f) n). {
+        clear.
+        induction x.
+        + intros. inversion H0; subst; apply empty.
+        + intros. simpl in *.
+          apply cat_count_rev in H0.
+          destruct H0 as [m [m' [H0 [H1 H2]]]]. subst.
+          apply cat_count. clear H1. clear IHx.
+          generalize dependent m. induction y.
+          - intros. inversion H0; subst; apply empty.
+          - intros. simpl in *. apply cat_count_rev in H0.
+            destruct H0 as [m0 [m0' [H0 [H1 H2]]]]. subst.
+            apply cat_count. clear H1. clear IHy.
+            generalize dependent m0. induction z.
+            * intros. inversion H0; subst; apply empty.
+            * intros. simpl in *. apply cat_count_rev in H0.
+              destruct H0 as [m1 [m1' [H0 [H1 H2]]]]. subst.
+              apply cat_count. apply H. apply le_n. apply le_n. apply le_n.
+              apply H0. apply IHz. intros. apply H.
+              apply H2. apply H3. apply le_S in H4. apply H4. apply H5.
+              apply H1.
+          * apply IHy. intros. apply H.
+          apply H2. apply le_S in H3. apply H3. apply H4. apply H5.
+          apply H1.
+        - apply IHx. intros. apply H.
+        apply le_S in H2. apply H2. apply H3. apply H4. apply H5.
+        apply H1.
+      } apply H3. intros i j k n0 Hi Hj Hk. apply H0.
+      apply H1. apply Hi. apply Hj. apply Hk. apply H2.
+  - inversion H1; subst; apply empty.
+Qed.
+
+Proposition physical_thread_correct_on_threads :
+  forall f i, physical_thread_set (thread i) f = i :: [].
+Proof. reflexivity. Qed.
+
+Proposition physical_thread_correct_on_warps :
+  forall f w, physical_thread_set (warp w) f = buildList Warp_size w.
+Proof. reflexivity. Qed.
+
 Proposition warp_correct_block :
   (** e.warps for e = block< XYZ<x, y, z> > behaves as if x was the next multiple of Warp_size
     (e.g. : 64 for x = 60 and Warp_size = 32) *)

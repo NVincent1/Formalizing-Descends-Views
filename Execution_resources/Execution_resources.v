@@ -8,17 +8,7 @@ Axiom Warp_size_value :
   Warp_size = 8.
 
 Definition shape : Type := nat * nat * nat.
-(* Notation "XYZ< x y z >" := (x,y,z).
-Notation "XY< x y >" := (x,y,1).
-Notation "XZ< x z >" := (x,1,z).
-Notation "YZ< y z >" := (1,y,z).
-Notation "X< x >" := (x,1,1).
-Notation "Y< y >" := (1,y,1).
-Notation "Z< z >" := (1,1,z). *)
 
-Definition size (shp : shape) :=
-  match shp with | (x,y,z) => x*y*z
-end.
 
 Definition XYZ (x y z : nat) := (x,y,z).
 Definition XY (x y : nat) := (x,y,1).
@@ -89,7 +79,7 @@ Inductive dimension :=
   | _x | _y | _z
 .
 
-Definition address_mapping := LogicalId_t * LogicalId_t -> PhysicalId_t.
+Definition index_mapping := ThreadId_t -> PhysicalId_t.
 
 Fixpoint build_collection (n : nat) (l : nat) (v : Vector execution_resource l) : execution_resource :=
   match n with
@@ -150,7 +140,7 @@ end.
 Fixpoint blocks (e : execution_resource) : execution_resource :=
   match e with
   | Collection n v => Collection n (fun x => blocks (v x))
-  | TensorCollection x y z v => TensorCollection x y z (fun i j k => blocks (v i j k))
+  | TensorCollection x y z v => Collection x (fun i => Collection y (fun j => Collection z (fun k => blocks (v i j k))))
   | grid (x,y,z) shp' g => TensorCollection x y z (fun i j k => block shp' (i,j,k) (g i j k))
   | _ => Error
 end.
@@ -158,20 +148,12 @@ end.
 Fixpoint threads (e : execution_resource) : execution_resource :=
   match e with
   | Collection n v => Collection n (fun x => threads (v x))
-  | TensorCollection x y z v => TensorCollection x y z (fun i j k => threads (v i j k))
-  | grid (x,y,z) (x',y',z') g => TensorCollection x y z (fun i j k => TensorCollection x' y' z' (fun i' j' k' => lthread (g i j k i' j' k')))
+  | TensorCollection x y z v => Collection x (fun i => Collection y (fun j => Collection z (fun k =>  threads (v i j k))))
+  | grid (x,y,z) (x',y',z') g => Collection x (fun i => Collection y (fun j => Collection z (fun k => TensorCollection x' y' z' (fun i' j' k' => lthread (g i j k i' j' k')))))
   | block (x,y,z) _ b => TensorCollection x y z (fun i j k => lthread (b i j k))
   | warp w => TensorCollection Warp_size 1 1 (fun i _ _ => thread (w i))
   | _ => Error
 end.
-
-Definition get_logical_id (shp : shape) : ThreadId_t -> LogicalId_t :=
-  fun i =>
-  match shp,i with
-  | (x',y',z'),((i,j,k),(i',j',k')) =>
-  (i*x'+i',j*y'+j',k*z'+k')
-end.
-
 
 Fixpoint next_multiple_aux (n : nat) (m : nat) :=
   match n with
@@ -188,7 +170,7 @@ Definition next_multiple (n : nat) (m : nat) :=
   | _ => next_multiple_aux (n + m) m
 end.
 
-Definition get_physical_id (shp : shape) (shp' : shape) : ThreadId_t -> PhysicalId_t :=
+Definition get_physical_id (shp : shape) (shp' : shape) : index_mapping :=
   fun id =>
   match shp,shp',id with
   | (x,y,z),(x',y',z'),((i,j,k),(i',j',k')) =>
@@ -196,16 +178,16 @@ Definition get_physical_id (shp : shape) (shp' : shape) : ThreadId_t -> Physical
     i*w+i' + x*w*(j*y'+j') + x*y*w*y'*(k*z'+k')
 end.
 
-Definition warp_aux (shp : shape) (id : shape) (b : Block_t shp) (f : ThreadId_t -> PhysicalId_t) :=
+Definition warp_aux (shp : shape) (id : shape) (b : Block_t shp) (f : index_mapping) :=
   match shp,id with
   | (x,y,z),(idx,idy,idz) => TensorCollection ((next_multiple x Warp_size)/Warp_size) y z
                                (fun i j k =>  warp (fun i' => f ((idx,idy,idz),(i*Warp_size+i',j,k))))
 end.
 
-Fixpoint warps (e : execution_resource) (f : ThreadId_t -> PhysicalId_t) : execution_resource :=
+Fixpoint warps (e : execution_resource) (f : index_mapping) : execution_resource :=
   match e with
   | Collection n v => Collection n (fun x => warps (v x) f)
-  | TensorCollection x y z v => TensorCollection x y z (fun i j k => warps (v i j k) f)
+  | TensorCollection x y z v => Collection x (fun i => Collection y (fun j => Collection z (fun k => warps (v i j k) f)))
   | grid (x,y,z) (x',y',z') g => Collection x (fun i => Collection y (fun j => Collection z (fun k => (warp_aux (x',y',z') (i,j,k) (g i j k) f))))
   | block (x,y,z) (idx,idy,idz) b => warp_aux (x,y,z) (idx,idy,idz) b f
   | warp w => e
@@ -270,24 +252,12 @@ Example test4 :
   let f_addr := get_physical_id (1,1,1) (2,2,2) in
   to_list (simplify (for_all (threads (warps (Block (XYZ 2 2 2)) f_addr)) _x)) =
 [
-[[
-  [[[@ thread 0 :: @ thread 1 :: @ thread 2 :: @ thread 3
-  :: @ thread 4 :: @ thread 5 :: @ thread 6 :: @ thread 7
-  :: []] :: []] :: []] :: []]
-  :: [
-  [[[@ thread 8 :: @ thread 9 :: @ thread 10 :: @ thread 11
-  :: @ thread 12 :: @ thread 13 :: @ thread 14 :: @ thread 15
-  :: []] :: []] :: []] :: []]
-:: []]
-:: [[
-  [[[@ thread 16 :: @ thread 17 :: @ thread 18 :: @ thread 19
-  :: @ thread 20 :: @ thread 21 :: @ thread 22 :: @ thread 23
-  :: []] :: []] :: []] :: []]
-  :: [
-  [[[@ thread 24 :: @ thread 25 :: @ thread 26 :: @ thread 27
-  :: @ thread 28 :: @ thread 29 :: @ thread 30 :: @ thread 31
-  :: []] :: []] :: []] :: []]
-:: []]
+   [[@ thread 0 :: @ thread 1 :: @ thread 2 :: @ thread 3 :: @ thread 4 :: @ thread 5 :: @ thread 6 :: @ thread 7:: []]
+ :: [@ thread 16 :: @ thread 17 :: @ thread 18 :: @ thread 19 :: @ thread 20 :: @ thread 21 :: @ thread 22 :: @ thread 23 :: []]
+  :: []]
+:: [[@ thread 8 :: @ thread 9 :: @ thread 10 :: @ thread 11 :: @ thread 12 :: @ thread 13 :: @ thread 14 :: @ thread 15 :: []]
+ :: [@ thread 24 :: @ thread 25 :: @ thread 26 :: @ thread 27 :: @ thread 28 :: @ thread 29 :: @ thread 30 :: @ thread 31 :: []]
+   :: []]
 :: []].
 Proof.
   simpl.
@@ -312,6 +282,46 @@ Example example :
 Proof.
   simpl.
   reflexivity.
+Qed.
+
+(* gpu.grid⟨xy⟨2, 2⟩, xy⟨4, 4⟩⟩.blocks.forall(y).forall(x).threads[0..1]y *)
+Example example2 :
+  (to_list (simplify (select_range (threads (for_all (for_all (blocks (Grid (XY 2 2) (XY 4 4))) _y) _x)) 0 1 _y))) =
+[[
+      [[[@ lthread (0, 0, 0, (0, 0, 0))
+      :: @ lthread (0, 0, 0, (1, 0, 0))
+      :: @ lthread (0, 0, 0, (2, 0, 0))
+      :: @ lthread (0, 0, 0, (3, 0, 0)) :: []] :: []] :: []]
+  ::  [[[@ lthread (1, 0, 0, (0, 0, 0))
+      :: @ lthread (1, 0, 0, (1, 0, 0))
+      :: @ lthread (1, 0, 0, (2, 0, 0))
+      :: @ lthread (1, 0, 0, (3, 0, 0)) :: []] :: []] :: []]
+  :: []]
+:: [
+      [[[@ lthread (0, 1, 0, (0, 0, 0))
+      :: @ lthread (0, 1, 0, (1, 0, 0))
+      :: @ lthread (0, 1, 0, (2, 0, 0))
+      :: @ lthread (0, 1, 0, (3, 0, 0)) :: []] :: []] :: []]
+  ::  [[[@ lthread (1, 1, 0, (0, 0, 0))
+      :: @ lthread (1, 1, 0, (1, 0, 0))
+      :: @ lthread (1, 1, 0, (2, 0, 0))
+      :: @ lthread (1, 1, 0, (3, 0, 0)) :: []] :: []] :: []]
+  :: []]
+:: []]
+.
+Proof.
+  simpl.
+  reflexivity.
+Qed.
+
+
+Example blocks_threads_vs_threads :
+  forall shp shp' g,
+  threads (blocks (grid shp shp' g)) = threads (grid shp shp' g).
+Proof.
+  intros. destruct shp as [[x y] z].
+  destruct shp' as [[x' y'] z'].
+  simpl. reflexivity.
 Qed.
 
 
