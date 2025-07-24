@@ -412,9 +412,9 @@ Proof.
         apply le_S in H2. apply H2. apply H3. apply H4. apply H5.
         apply H1.
     }
-    apply H2. intros.
-    apply (H i0 j k) with (m := n) in H0.
-    apply H0. apply H3. apply H4. apply H5. apply H6. apply H1.
+    apply H2. intros. destruct H0.
+    apply (H i0 j k) with (m := n) in H7.
+    apply H7. apply H3. apply H4. apply H5. apply H6. apply H1.
 Qed.
 
 
@@ -501,8 +501,9 @@ Proof.
         apply H1.
     }
     apply H2. intros.
-    apply (H i0 j k) with (m := n) (f := f) in H0.
-    apply H0. apply H3. apply H4. apply H5. apply H6. apply H1.
+    destruct H0.
+    apply (H i0 j k) with (m := n) (f := f) in H7.
+    apply H7. apply H3. apply H4. apply H5. apply H6. apply H1.
 Qed.
 
 
@@ -640,8 +641,9 @@ Proof.
         apply H1.
     }
     apply H2. intros.
-    apply (H i0 j k) with (m := n) in H0.
-    apply H0. apply H3. apply H4. apply H5. apply H6. apply H1.
+    destruct H0.
+    apply (H i0 j k) with (m := n) in H7.
+    apply H7. apply H3. apply H4. apply H5. apply H6. apply H1.
 Qed.
 
 
@@ -787,8 +789,9 @@ Proof.
         apply H1.
     }
     apply H2. intros.
-    apply (H i0 j k) with (m := n) (f := f) in H0.
-    apply H0. apply H3. apply H4. apply H5. apply H6. apply H1.
+    destruct H0.
+    apply (H i0 j k) with (m := n) (f := f) in H7.
+    apply H7. apply H3. apply H4. apply H5. apply H6. apply H1.
 Qed.
 
 

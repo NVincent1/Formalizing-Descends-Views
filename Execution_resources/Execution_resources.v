@@ -190,7 +190,6 @@ Fixpoint warps (e : execution_resource) (f : index_mapping) : execution_resource
   | TensorCollection x y z v => Collection x (fun i => Collection y (fun j => Collection z (fun k => warps (v i j k) f)))
   | grid (x,y,z) (x',y',z') g => Collection x (fun i => Collection y (fun j => Collection z (fun k => (warp_aux (x',y',z') (i,j,k) (g i j k) f))))
   | block (x,y,z) (idx,idy,idz) b => warp_aux (x,y,z) (idx,idy,idz) b f
-  | warp w => e
   | _ => Error
 end.
 
