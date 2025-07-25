@@ -11,9 +11,9 @@ Require Import PeanoNat.
 Proposition induction_step_collection_select :
   forall i n v m m' d l r,
 (forall n' n0 n0', n' < n -> count i (logical_thread_set (v n')) n0 ->
-    count i (logical_thread_set (select_range (v n') l r d)) n0' -> n0' <= n0) ->
+    count i (logical_thread_set (sub_selection (v n') l r d)) n0' -> n0' <= n0) ->
   count i (zip (buildList n (fun i : nat => logical_thread_set (v i)))) m
--> count i (zip (buildList n (fun i0 : nat => logical_thread_set (select_range (v i0) l r d)))) m'
+-> count i (zip (buildList n (fun i0 : nat => logical_thread_set (sub_selection (v i0) l r d)))) m'
 -> m' <= m.
 Proof.
   induction n.
@@ -26,7 +26,7 @@ Proof.
   assert (forall n' n0 n0' : nat,
     n' < n ->
     count i (logical_thread_set (v n')) n0 ->
-    count i (logical_thread_set (select_range (v n') l r d)) n0' -> n0' <= n0).
+    count i (logical_thread_set (sub_selection (v n') l r d)) n0' -> n0' <= n0).
     intros. apply le_S in H2. apply H with (n0 := n0) (n0' := n0')in H2.
     apply H2. apply H3. apply H4.
   apply H with (n0 := m1) in H0'.
@@ -40,9 +40,9 @@ Qed.
 Proposition induction_step_collection_select_physical :
   forall i n v m m' d l r f,
 (forall n' n0 n0', n' < n -> count i (physical_thread_set (v n') f) n0 ->
-    count i (physical_thread_set (select_range (v n') l r d) f) n0' -> n0' <= n0) ->
+    count i (physical_thread_set (sub_selection (v n') l r d) f) n0' -> n0' <= n0) ->
   count i (zip (buildList n (fun i : nat => physical_thread_set (v i) f))) m
--> count i (zip (buildList n (fun i0 : nat => physical_thread_set (select_range (v i0) l r d) f))) m'
+-> count i (zip (buildList n (fun i0 : nat => physical_thread_set (sub_selection (v i0) l r d) f))) m'
 -> m' <= m.
 Proof.
   induction n.
@@ -55,7 +55,7 @@ Proof.
   assert (forall n' n0 n0' : nat,
     n' < n ->
     count i (physical_thread_set (v n') f) n0 ->
-    count i (physical_thread_set (select_range (v n') l r d) f) n0' -> n0' <= n0).
+    count i (physical_thread_set (sub_selection (v n') l r d) f) n0' -> n0' <= n0).
     intros. apply le_S in H2. apply H with (n0 := n0) (n0' := n0')in H2.
     apply H2. apply H3. apply H4.
   apply H with (n0 := m1) in H0'.
@@ -67,7 +67,7 @@ Qed.
 
 Proposition select_correct :
   forall i e d m m' l r,
-  no_error_2 e (fun e => select_range e l r d) -> count i (logical_thread_set e) m -> count i (logical_thread_set (select_range e l r d)) m' -> m' <= m
+  no_error_2 e (fun e => sub_selection e l r d) -> count i (logical_thread_set e) m -> count i (logical_thread_set (sub_selection e l r d)) m' -> m' <= m
 .
 Proof.
   induction e;intros; try (exfalso; apply H; reflexivity).
@@ -150,7 +150,7 @@ Qed.
 
 Proposition select_error :
   forall e l r d,
-  select_range e l r d = Error -> (
+  sub_selection e l r d = Error -> (
   (exists s i b, e = block s i b) \/
   (exists s s' g, e = grid s s' g) \/
   (exists w, e = warp w) \/
@@ -208,7 +208,7 @@ Qed.
 
 Proposition select_correct_physical :
   forall i e d m m' l r f,
-  no_error_2 e (fun e => select_range e l r d) -> count i (physical_thread_set e f) m -> count i (physical_thread_set (select_range e l r d) f) m' -> m' <= m
+  no_error_2 e (fun e => sub_selection e l r d) -> count i (physical_thread_set e f) m -> count i (physical_thread_set (sub_selection e l r d) f) m' -> m' <= m
 .
 Proof.
   induction e;intros; try (exfalso; apply H; reflexivity).
@@ -301,7 +301,7 @@ end.
 Proposition select_no_error :
   forall e d l r,
     ((exists P, contains_tensorcollection e P) /\ inbound r d e) <->
-    no_error_2 e (fun e => select_range e l r d)
+    no_error_2 e (fun e => sub_selection e l r d)
 .
 Proof.
   split.

@@ -101,7 +101,7 @@ Qed.
 
 Proposition select_preserves_tensor_collection :
   forall e d l r P,
-  no_error_2 e (fun e => select_range e l r d) -> contains_tensorcollection e P -> contains_tensorcollection (select_range e l r d) P.
+  no_error_2 e (fun e => sub_selection e l r d) -> contains_tensorcollection e P -> contains_tensorcollection (sub_selection e l r d) P.
 Proof.
   induction e; try (intros; apply H; reflexivity).
   - simpl in *. intros. apply H. apply H0. apply H2. apply H1. apply H2.

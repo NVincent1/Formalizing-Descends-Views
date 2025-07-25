@@ -128,9 +128,9 @@ Notation "x <=? y" := (leb x y).
 Definition assert (cond : bool) (success : execution_resource) : execution_resource :=
   if cond then success else Error.
 
-Fixpoint select_range (e : execution_resource) (l : nat) (r : nat) (d : dimension) : execution_resource :=
+Fixpoint sub_selection (e : execution_resource) (l : nat) (r : nat) (d : dimension) : execution_resource :=
   match e,d with
-  | Collection n v,_ => Collection n (fun x => select_range (v x) l r d)
+  | Collection n v,_ => Collection n (fun x => sub_selection (v x) l r d)
   | TensorCollection x y z v, _x => assert (r <=? x) (Collection (r-l) (fun i => TensorCollection 1 y z (fun _ j k => v (i+l) j k)))
   | TensorCollection x y z v, _y => assert (r <=? y) (Collection (r-l) (fun j => TensorCollection x 1 z (fun i _ k => v i (j+l) k)))
   | TensorCollection x y z v, _z => assert (r <=? z) (Collection (r-l) (fun k => TensorCollection x y 1 (fun i j _ => v i j (k+l))))
@@ -236,7 +236,7 @@ Qed.
 
 Example test3 :
   let f_addr := get_physical_id (1,1,1) (2,2,2) in
-  to_list (simplify (translate (for_all (select_range (for_all
+  to_list (simplify (translate (for_all (sub_selection (for_all
       (threads (Block (XYZ 2 5 2))) _z) 2 4 _y) _x) f_addr)) =
     [[[@ thread 16 :: @ thread 17 :: []] :: [@ thread 24 :: @ thread 25 :: []] :: []]
  :: [[@ thread 32 :: @ thread 33 :: []] :: [@ thread 40 :: @ thread 41 :: []] :: []] :: []].
@@ -285,7 +285,7 @@ Qed.
 
 (* gpu.grid⟨xy⟨2, 2⟩, xy⟨4, 4⟩⟩.blocks.forall(y).forall(x).threads[0..1]y *)
 Example example2 :
-  (to_list (simplify (select_range (threads (for_all (for_all (blocks (Grid (XY 2 2) (XY 4 4))) _y) _x)) 0 1 _y))) =
+  (to_list (simplify (sub_selection (threads (for_all (for_all (blocks (Grid (XY 2 2) (XY 4 4))) _y) _x)) 0 1 _y))) =
 [[
       [[[@ lthread (0, 0, 0, (0, 0, 0))
       :: @ lthread (0, 0, 0, (1, 0, 0))
