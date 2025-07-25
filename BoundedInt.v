@@ -1,5 +1,4 @@
 Require Import PeanoNat.
-From Views Require Import Lemmas.
 
 
 Inductive Idx (s : nat) : Type := 
@@ -22,6 +21,12 @@ Proof.
   destruct i. apply H.
 Qed.
 
+Definition zero {n : nat} :=
+  idx (S n) 0 (Nat.lt_0_succ n).
+
+Definition maxIdx {n : nat} :=
+  idx (S n) n (le_n (S n)).
+
 (* Equality between two bounded integers of the same value, but with different proofs (reflexivity fails) *)
 Axiom unif_Idx :
   forall (n : nat) (s : nat) (H1 : n < s) (H2 : n < s), idx s n H1 = idx s n H2.
@@ -34,7 +39,7 @@ Proof.
 Qed.
 
 
-(** Proofs needed for the definition of the functions in `ViewFunctions.v` *)
+(** Proofs needed for the definition of the functions in `Views.v` *)
 
 Definition reverseBounded {l : nat} {i : Idx l} :
   l > l - 1 - to_nat i.
@@ -80,9 +85,3 @@ Proof.
   - rewrite Nat.mul_succ_r. rewrite Nat.add_comm. unfold gt. unfold lt. rewrite <- Nat.add_succ_l. apply Nat.add_le_mono.
   apply Hi. subst. apply Nat.mul_le_mono_l. apply le_S_n in Hj. apply Hj.
 Qed.
-
-Definition zero {n : nat} :=
-  idx (S n) 0 (Nat.lt_0_succ n).
-
-Definition maxIdx {n : nat} :=
-  idx (S n) n (le_n (S n)).

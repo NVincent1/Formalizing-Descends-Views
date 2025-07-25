@@ -1,9 +1,9 @@
 
 From Views Require Import utils.
 From Views Require Import BoundedInt.
-From Views Require Import ViewFunctions.
-From Views Require Import ViewsProof.
-From Views Require Import ViewsLemmas.
+From Views Require Import Views.
+From Views Require Import Proof.
+From Views Require Import Views_Lemmas.
 Require Import PeanoNat.
 
 Axiom FunEquality :

@@ -1,9 +1,9 @@
 
-From Views Require Import Lemmas.
+From Views Require Import Injectivity_Lemmas.
 From Views Require Import utils.
 From Views Require Import BoundedInt.
-From Views Require Import ViewFunctions.
-From Views Require Import ViewsLemmas.
+From Views Require Import Views.
+From Views Require Import Views_Lemmas.
 Require Import PeanoNat.
 
 
@@ -29,6 +29,28 @@ Proof.
   assert ((I,x) = (I,y)). apply Hf with (v := fun x => v).
   intros. apply Hinj in H0. subst. destruct a,b. reflexivity. apply H.
   inversion H0. reflexivity.
+Qed.
+
+Theorem injective_function_preserve_injectivity :
+  (** An injective reordering function holds the property above *)
+  forall A B (f : Tuple B -> Tuple A),
+  (forall x y, f x = f y -> x = y) -> preserve_Injectivity (view f).
+Proof.
+  intros A B f f_inj C v v_inj i j x y H.
+  unfold view in H.
+  assert (Hx:curry_totalApp (uncurry (fun x : Tuple B => curry_totalApp (v i) (f x))) x =
+    curry_totalApp (v i) (f x)).
+  apply uncurry_curry_inverse.
+  rewrite Hx in H.
+  assert (Hy:curry_totalApp (uncurry (fun x : Tuple B => curry_totalApp (v j) (f x))) y =
+    curry_totalApp (v j) (f y)).
+  apply uncurry_curry_inverse.
+  rewrite Hy in H.
+  clear Hx. clear Hy.
+  apply v_inj in H.
+  inversion H.
+  apply f_inj in H2.
+  subst; reflexivity.
 Qed.
 
 (** identity_view *)
@@ -255,27 +277,6 @@ Proof.
   apply Hf with (i := (i,hx)) (j := (j,hy)) (x := x) (y := y) in Hinj'.
   inversion Hinj'. reflexivity.
   apply H.
-Qed.
-
-Theorem injective_function_preserve_injectivity :
-  forall A B (f : Tuple B -> Tuple A),
-  (forall x y, f x = f y -> x = y) -> preserve_Injectivity (view f).
-Proof.
-  intros A B f f_inj C v v_inj i j x y H.
-  unfold view in H.
-  assert (Hx:curry_totalApp (uncurry (fun x : Tuple B => curry_totalApp (v i) (f x))) x =
-    curry_totalApp (v i) (f x)).
-  apply uncurry_curry_inverse.
-  rewrite Hx in H.
-  assert (Hy:curry_totalApp (uncurry (fun x : Tuple B => curry_totalApp (v j) (f x))) y =
-    curry_totalApp (v j) (f y)).
-  apply uncurry_curry_inverse.
-  rewrite Hy in H.
-  clear Hx. clear Hy.
-  apply v_inj in H.
-  inversion H.
-  apply f_inj in H2.
-  subst; reflexivity.
 Qed.
 
 

@@ -1,9 +1,9 @@
 
-From Views Require Import Lemmas.
-From Views Require Import utils.
+From Views Require Import Injectivity_Lemmas.
 From Views Require Import BoundedInt.
-From Views Require Import ViewFunctions.
-From Views Require Import ViewsProof.
+From Views Require Import utils.
+From Views Require Import Views.
+From Views Require Import Proof.
 From Ltac2 Require Import Ltac2.
 From Views Require Import Tactic.
 Require Import PeanoNat.

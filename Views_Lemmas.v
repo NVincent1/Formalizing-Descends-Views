@@ -1,8 +1,7 @@
 
-From Views Require Import Lemmas.
 From Views Require Import utils.
 From Views Require Import BoundedInt.
-From Views Require Import ViewFunctions.
+From Views Require Import Views.
 Require Import PeanoNat.
 
 

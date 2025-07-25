@@ -1,15 +1,8 @@
 
-From Views Require Import Lemmas.
 From Views Require Import utils.
-From Views Require Import BoundedInt.
-From Views Require Import ViewFunctions.
-From Views Require Import ViewsLemmas.
-From Views Require Import ViewsProof.
+From Views Require Import Proof.
 Require Import PeanoNat.
 From Ltac2 Require Import Ltac2.
-From Ltac2 Require Import Message.
-From Ltac2 Require Import Control.
-From Ltac2 Require Import Std.
 
 (** Importing LTac2 is needed in order to use the tactics provided in this file *)
 
