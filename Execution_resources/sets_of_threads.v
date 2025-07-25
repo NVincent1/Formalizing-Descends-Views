@@ -89,7 +89,14 @@ Inductive count {T : Type} : T -> List T -> nat -> Prop :=
 Fixpoint no_error (e : execution_resource) (f : execution_resource -> execution_resource) : Prop :=
   match e with
   | Collection n v => forall i, i < n -> (no_error (v i) f)
-  | TensorCollection x y z v => f e <> Error /\ forall i j k, i < x -> j < y -> k < z -> (no_error (v i j k) f)
+  | TensorCollection x y z v => forall i j k, i < x -> j < y -> k < z -> (no_error (v i j k) f)
+  | _ => f e <> Error
+end.
+
+Fixpoint no_error_2 (e : execution_resource) (f : execution_resource -> execution_resource) : Prop :=
+  match e with
+  | Collection n v => forall i, i < n -> (no_error_2 (v i) f)
+  | TensorCollection x y z v => f e <> Error
   | _ => f e <> Error
 end.
 

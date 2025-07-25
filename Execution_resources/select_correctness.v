@@ -4,6 +4,7 @@ From Views.Execution_resources Require Import Execution_resources.
 From Views.Execution_resources Require Import lemmas.
 From Views.Execution_resources Require Import correctness_lemmas.
 From Views.Execution_resources Require Import sets_of_threads.
+From Views.Execution_resources Require Import collections.
 Require Import PeanoNat.
 
 
@@ -66,7 +67,7 @@ Qed.
 
 Proposition select_correct :
   forall i e d m m' l r,
-  no_error e (fun e => select_range e l r d) -> count i (logical_thread_set e) m -> count i (logical_thread_set (select_range e l r d)) m' -> m' <= m
+  no_error_2 e (fun e => select_range e l r d) -> count i (logical_thread_set e) m -> count i (logical_thread_set (select_range e l r d)) m' -> m' <= m
 .
 Proof.
   induction e;intros; try (exfalso; apply H; reflexivity).
@@ -207,7 +208,7 @@ Qed.
 
 Proposition select_correct_physical :
   forall i e d m m' l r f,
-  no_error e (fun e => select_range e l r d) -> count i (physical_thread_set e f) m -> count i (physical_thread_set (select_range e l r d) f) m' -> m' <= m
+  no_error_2 e (fun e => select_range e l r d) -> count i (physical_thread_set e f) m -> count i (physical_thread_set (select_range e l r d) f) m' -> m' <= m
 .
 Proof.
   induction e;intros; try (exfalso; apply H; reflexivity).
@@ -286,5 +287,43 @@ Proof.
         apply IHy. apply H2.
       apply IHx. apply H2.
       ++ simpl in *. inversion H2. apply le_0_n.
+Qed.
+
+Fixpoint inbound (b : nat) (d : dimension) (e : execution_resource) : Prop :=
+  match e,d with
+  | Collection n v,_ => forall i, i < n -> inbound b d (v i)
+  | TensorCollection x y z v, _x => b <= x
+  | TensorCollection x y z v, _y => b <= y
+  | TensorCollection x y z v, _z => b <= z
+  | _,_ => True
+end.
+
+Proposition select_no_error :
+  forall e d l r,
+    ((exists P, contains_tensorcollection e P) /\ inbound r d e) <->
+    no_error_2 e (fun e => select_range e l r d)
+.
+Proof.
+  split.
+  * induction e; try (intros; exfalso; destruct H; destruct H; apply H).
+    - intros. simpl in *. destruct H0 as [[P H0] H1].
+      intros. apply H. split. exists P.
+      apply H0. apply H2. apply H1. apply H2.
+    - intros. destruct H0 as [[P H0] H1]. simpl in *.
+      assert (forall a b, a <= b -> a <=? b = true). clear. induction a. intros. reflexivity.
+      intros. destruct b. inversion H. apply le_S_n in H. apply IHa. apply H.
+      destruct d; apply H2 in H1; rewrite H1; intro H'; inversion H'.
+  * induction e; try (intros; exfalso; apply H; reflexivity).
+    - intros. simpl in *.
+      assert (exists (Pi : Vector (execution_resource -> Prop) n), forall i, i < n -> contains_tensorcollection (content i) (Pi i)).
+        apply exists_vectorprop. intros. apply H. apply H0. apply H1.
+        destruct H1 as [Pi H1]. split. exists (Or Pi).
+          intros. apply impl_collection with (P := Pi i). apply Or_impl.
+          apply H2. apply H1. apply H2. intros. apply H. apply H0. apply H2.
+    - intros. simpl in *. split. exists (fun e => e = e). intros. reflexivity.
+    destruct d.
+      + destruct (r <=? x) eqn:E. apply leb_correct. apply E. exfalso. apply H0. reflexivity.
+      + destruct (r <=? y) eqn:E. apply leb_correct. apply E. exfalso. apply H0. reflexivity.
+      + destruct (r <=? z) eqn:E. apply leb_correct. apply E. exfalso. apply H0. reflexivity.
 Qed.
 

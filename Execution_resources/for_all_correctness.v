@@ -4,6 +4,7 @@ From Views.Execution_resources Require Import Execution_resources.
 From Views.Execution_resources Require Import lemmas.
 From Views.Execution_resources Require Import correctness_lemmas.
 From Views.Execution_resources Require Import sets_of_threads.
+From Views.Execution_resources Require Import collections.
 Require Import PeanoNat.
 
 Proposition induction_step_collection_forall :
@@ -46,7 +47,7 @@ Qed.
 
 Proposition for_all_correct :
   forall i e d m,
-  no_error e (fun e => for_all e d) -> count i (logical_thread_set e) m -> count i (logical_thread_set (for_all e d)) m
+  no_error_2 e (fun e => for_all e d) -> count i (logical_thread_set e) m -> count i (logical_thread_set (for_all e d)) m
 .
 Proof.
   induction e; intros; try (exfalso; apply H; reflexivity).
@@ -117,7 +118,7 @@ Qed.
 
 Proposition for_all_correct_physical :
   forall i e d m f,
-  no_error e (fun e => for_all e d) -> count i (physical_thread_set e f) m -> count i (physical_thread_set (for_all e d) f) m
+  no_error_2 e (fun e => for_all e d) -> count i (physical_thread_set e f) m -> count i (physical_thread_set (for_all e d) f) m
 .
 Proof.
   induction e; intros;simpl in *; try (exfalso; apply H; reflexivity).
@@ -160,5 +161,28 @@ Proof.
             apply H2.
         apply IHy. apply H2.
       apply IHx. apply H2.
+Qed.
+
+Proposition forall_no_error_case :
+  forall e d,
+    (exists P, contains_tensorcollection e P) <->
+    no_error_2 e (fun e => for_all e d)
+.
+Proof.
+  split.
+  * induction e; try (intros; exfalso; destruct H; apply H).
+    - intros. simpl in *. destruct H0 as [P H0].
+      intros. apply H. exists P.
+      apply H0. apply H1.
+    - intros. destruct H0 as [P H0]. simpl in *.
+      destruct d; intro H'; inversion H'.
+  * induction e; try (intros; exfalso; apply H; reflexivity).
+    - intros. simpl in *.
+      assert (exists (Pi : Vector (execution_resource -> Prop) n), forall i, i < n -> contains_tensorcollection (content i) (Pi i)).
+        apply exists_vectorprop. intros. apply H. apply H0. apply H1.
+      destruct H1 as [Pi H1]. exists (Or Pi).
+      intros. apply impl_collection with (P := Pi i). apply Or_impl.
+      apply H2. apply H1. apply H2.
+    - intros. simpl in *. exists (fun e => e = e). intros. reflexivity.
 Qed.
 
