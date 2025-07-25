@@ -89,7 +89,7 @@ Qed.
 
 Proposition forall_preserves_tensor_collection :
   forall e d P,
-  no_error e (fun e => for_all e d) -> contains_tensorcollection e P -> contains_tensorcollection (for_all e d) P.
+  no_error_2 e (fun e => for_all e d) -> contains_tensorcollection e P -> contains_tensorcollection (for_all e d) P.
 Proof.
   induction e; try (intros; apply H; reflexivity).
   - simpl in *. intros. apply H. apply H0. apply H2. apply H1. apply H2.
@@ -101,7 +101,7 @@ Qed.
 
 Proposition select_preserves_tensor_collection :
   forall e d l r P,
-  no_error e (fun e => select_range e l r d) -> contains_tensorcollection e P -> contains_tensorcollection (select_range e l r d) P.
+  no_error_2 e (fun e => select_range e l r d) -> contains_tensorcollection e P -> contains_tensorcollection (select_range e l r d) P.
 Proof.
   induction e; try (intros; apply H; reflexivity).
   - simpl in *. intros. apply H. apply H0. apply H2. apply H1. apply H2.
@@ -115,7 +115,7 @@ Proof.
           apply Nat.le_add_r. apply Nat.sub_add in H6. rewrite H6. apply E.
         apply H4.
         apply H5.
-      * simpl in *. destruct H0. apply H0. reflexivity.
+      * simpl in *. apply H0. reflexivity.
     + simpl in *. destruct (r <=? y) eqn:E.
       * simpl. intros. apply H1.
         apply H3.
@@ -125,7 +125,7 @@ Proof.
           apply Nat.add_sub_eq_nz. intro. inversion H6. apply E'. rewrite <- H6.
           apply Nat.le_add_r. apply Nat.sub_add in H6. rewrite H6. apply E.
         apply H5.
-      * simpl in *. destruct H0. apply H0. reflexivity.
+      * simpl in *. apply H0. reflexivity.
     + simpl in *. destruct (r <=? z) eqn:E.
       * simpl. intros. apply H1.
           apply H3.
@@ -135,10 +135,10 @@ Proof.
             inversion H2. assert (l + S n = r).
             apply Nat.add_sub_eq_nz. intro. inversion H6. apply E'. rewrite <- H6.
             apply Nat.le_add_r. apply Nat.sub_add in H6. rewrite H6. apply E.
-      * simpl in *. destruct H0. apply H0. reflexivity.
+      * simpl in *. apply H0. reflexivity.
 Qed.
 
-(* Lemma impl_collection :
+Lemma impl_collection :
   forall P P', (forall e, P e -> P' e) ->
   forall e, contains_tensorcollection e P -> contains_tensorcollection e P'.
 Proof.
@@ -166,25 +166,6 @@ Proof.
       rewrite H5. apply H1. apply H4.
 Qed.
 
-Lemma exists_tensorprop :
-  forall x y z (v : Tensor' execution_resource x y z),
-  (forall i j k, i < x -> j < y -> k < z ->
-    exists P : execution_resource -> Prop, contains_tensorcollection (v i j k) P) ->
-    exists (Pi : Tensor' (execution_resource -> Prop) x y z), forall i j k, i < x -> j < y -> k < z -> contains_tensorcollection (v i j k) (Pi i j k).
-Proof.
-  induction x.
-  - intros. exists (fun i j k e => False). intros. inversion H0.
-  - intros. assert (exists P, contains_tensorcollection (v n) P). apply H. apply le_n.
-    assert (exists Pi : Vector (execution_resource -> Prop) n,
-        forall i : nat, i < n -> contains_tensorcollection (v i) (Pi i)).
-    apply IHn. intros. apply le_S in H1. apply H. apply H1.
-    destruct H0 as [P H0]. destruct H1 as [Pi H1].
-    exists (fun i => if eqb i n then P else Pi i).
-      intros. inversion H2. rewrite eqb_refl. apply H0.
-      assert (eqb i n = false). apply eqb_correct_2. intro; subst. apply Nat.lt_irrefl in H4. apply H4.
-      rewrite H5. apply H1. apply H4.
-Qed.
-
 Fixpoint Or {n : nat} (Pi : Vector (execution_resource -> Prop) n) : (execution_resource -> Prop) :=
   match n with
   | 0 => fun e => False
@@ -199,22 +180,5 @@ Proof.
     intros. inversion H.
     intros. simpl in *. inversion H. left. subst. apply H0.
       right. apply IHn with (i := i). apply H2. apply H0.
-Qed. 
+Qed.
 
-
-Proposition forall_error_case :
-  forall e d,
-    no_error e (fun e => for_all e d) -> exists P, contains_tensorcollection e P.
-Proof.
-  induction e; try (intros; exfalso; apply H; reflexivity).
-  - intros. simpl in *.
-  assert (exists (Pi : Vector (execution_resource -> Prop) n), forall i, i < n -> contains_tensorcollection (content i) (Pi i)).
-    apply exists_vectorprop. intros. apply H with (d := d). apply H0. apply H1.
-    destruct H1 as [Pi H1]. exists (Or Pi).
-      intros. apply impl_collection with (P := Pi i). apply Or_impl.
-      apply H2. apply H1. apply H2.
-  - intros. destruct d.
-    + simpl in *. 
-
-
-  *)

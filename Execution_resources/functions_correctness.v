@@ -412,9 +412,9 @@ Proof.
         apply le_S in H2. apply H2. apply H3. apply H4. apply H5.
         apply H1.
     }
-    apply H2. intros. destruct H0.
-    apply (H i0 j k) with (m := n) in H7.
-    apply H7. apply H3. apply H4. apply H5. apply H6. apply H1.
+    apply H2. intros.
+    apply (H i0 j k) with (m := n) in H0.
+    apply H0. apply H3. apply H4. apply H5. apply H6. apply H1.
 Qed.
 
 
@@ -501,9 +501,8 @@ Proof.
         apply H1.
     }
     apply H2. intros.
-    destruct H0.
-    apply (H i0 j k) with (m := n) (f := f) in H7.
-    apply H7. apply H3. apply H4. apply H5. apply H6. apply H1.
+    apply (H i0 j k) with (m := n) (f := f) in H0.
+    apply H0. apply H3. apply H4. apply H5. apply H6. apply H1.
 Qed.
 
 
@@ -641,9 +640,8 @@ Proof.
         apply H1.
     }
     apply H2. intros.
-    destruct H0.
-    apply (H i0 j k) with (m := n) in H7.
-    apply H7. apply H3. apply H4. apply H5. apply H6. apply H1.
+    apply (H i0 j k) with (m := n) in H0.
+    apply H0. apply H3. apply H4. apply H5. apply H6. apply H1.
 Qed.
 
 
@@ -789,11 +787,112 @@ Proof.
         apply H1.
     }
     apply H2. intros.
-    destruct H0.
-    apply (H i0 j k) with (m := n) (f := f) in H7.
-    apply H7. apply H3. apply H4. apply H5. apply H6. apply H1.
+    apply (H i0 j k) with (m := n) (f := f) in H0.
+    apply H0. apply H3. apply H4. apply H5. apply H6. apply H1.
 Qed.
 
+Fixpoint has_block (e : execution_resource) : Prop :=
+  match e with
+  | Collection n v => forall i, i < n -> has_block (v i)
+  | TensorCollection x y z v => forall i j k, i < x -> j < y -> k < z -> has_block (v i j k)
+  | block shp id b => True
+  | grid shp shp' g => True
+  | _ => False
+end.
+
+Fixpoint contain_threads (e : execution_resource) : Prop :=
+  match e with
+  | Collection n v => forall i, i < n -> contain_threads (v i)
+  | TensorCollection x y z v => forall i j k, i < x -> j < y -> k < z -> contain_threads (v i j k)
+  | block shp id b => True
+  | grid shp shp' g => True
+  | warp w => True
+  | _ => False
+end.
+
+Fixpoint has_grid (e : execution_resource) : Prop :=
+  match e with
+  | Collection n v => forall i, i < n -> has_grid (v i)
+  | TensorCollection x y z v => forall i j k, i < x -> j < y -> k < z -> has_grid (v i j k)
+  | grid shp shp' g => True
+  | _ => False
+end.
+
+Proposition warps_no_error_case :
+  forall e f,
+  has_block e <-> no_error e (fun e => warps e f).
+Proof.
+  split.
+  * induction e; try (intros; exfalso; destruct H; apply H).
+    - intros. simpl in *. destruct shp as [[x y] z]. destruct id as [[idx idy] idz].
+      intro. inversion H0.
+    - intros. simpl in *. destruct shp as [[x y] z]. destruct shp' as [[x' y'] z'].
+      intro. inversion H0.
+    - intros. simpl. intros. apply H. simpl in H0.
+      apply H0. apply H1.
+    - intros. simpl. intros. apply H. simpl in H0.
+      apply H0; assumption.
+
+  * induction e; try (intros; exfalso; apply H; reflexivity).
+    - intros. simpl in *. destruct shp as [[x y] z]. destruct id as [[idx idy] idz].
+      apply I.
+    - intros. simpl in *. destruct shp as [[x y] z]. destruct shp' as [[x' y'] z'].
+      apply I.
+    - intros. simpl. intros. apply H. simpl in H0.
+      apply H0. apply H1.
+    - intros. simpl. intros. apply H. simpl in H0.
+      apply H0; assumption.
+Qed.
+
+Proposition threads_no_error_case :
+  forall e,
+  contain_threads e <-> no_error e threads.
+Proof.
+  split.
+  * induction e; try (intros; exfalso; destruct H; apply H).
+    - intros. simpl in *. intro. inversion H0.
+    - intros. simpl in *. destruct shp as [[x y] z]. destruct id as [[idx idy] idz].
+      intro. inversion H0.
+    - intros. simpl in *. destruct shp as [[x y] z]. destruct shp' as [[x' y'] z'].
+      intro. inversion H0.
+    - intros. simpl. intros. apply H. simpl in H0.
+      apply H0. apply H1.
+    - intros. simpl. intros. apply H. simpl in H0.
+      apply H0; assumption.
+
+  * induction e; try (intros; exfalso; apply H; reflexivity).
+    - intros. apply I.
+    - intros. simpl in *. destruct shp as [[x y] z]. destruct id as [[idx idy] idz].
+      apply I.
+    - intros. simpl in *. destruct shp as [[x y] z]. destruct shp' as [[x' y'] z'].
+      apply I.
+    - intros. simpl. intros. apply H. simpl in H0.
+      apply H0. apply H1.
+    - intros. simpl. intros. apply H. simpl in H0.
+      apply H0; assumption.
+Qed.
+
+Proposition blocks_no_error_case :
+  forall e,
+  has_grid e <-> no_error e blocks.
+Proof.
+  split.
+  * induction e; try (intros; exfalso; destruct H; apply H).
+    - intros. simpl in *. destruct shp as [[x y] z]. destruct shp' as [[x' y'] z'].
+      intro. inversion H0.
+    - intros. simpl. intros. apply H. simpl in H0.
+      apply H0. apply H1.
+    - intros. simpl. intros. apply H. simpl in H0.
+      apply H0; assumption.
+
+  * induction e; try (intros; exfalso; apply H; reflexivity).
+    - intros. simpl in *. destruct shp as [[x y] z]. destruct shp' as [[x' y'] z'].
+      apply I.
+    - intros. simpl. intros. apply H. simpl in H0.
+      apply H0. apply H1.
+    - intros. simpl. intros. apply H. simpl in H0.
+      apply H0; assumption.
+Qed.
 
 
 
