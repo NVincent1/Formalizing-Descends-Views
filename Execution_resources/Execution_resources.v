@@ -4,8 +4,12 @@ Require Import PeanoNat.
 
 Definition Warp_size : nat.
 Proof. apply 0. Qed.
-Axiom Warp_size_value :
+
+(* As Rocq have performance issues with larger examples,
+the size of warps is set to 8 instead of 32 *)
+Axiom Warp_size_value_8 :
   Warp_size = 8.
+
 
 Definition shape : Type := nat * nat * nat.
 
@@ -50,6 +54,8 @@ Inductive execution_resource : Type :=
   | grid (shp : shape) (shp' : shape) (g : Grid_t shp shp')
   | Collection (n : nat) (content : Vector execution_resource n)
   | TensorCollection (x y z : nat) (content : Tensor' execution_resource x y z)
+    (* Used to represent a 3 dimensional collection e of execution resources
+    on which we can apply e.forall(d) or e[l,r]d *)
   | Error
 .
 
@@ -90,32 +96,6 @@ Fixpoint build_collection (n : nat) (l : nat) (v : Vector execution_resource l) 
            end
 end.
 
-Fixpoint for_all (e : execution_resource) (d : dimension) : execution_resource :=
-  match e,d with
-  | Collection n v,_ => Collection n (fun i => for_all (v i) d)
-  | TensorCollection x y z v, _x => Collection x (fun i => TensorCollection 1 y z (fun _ j k => v i j k))
-  | TensorCollection x y z v, _y => Collection y (fun j => TensorCollection x 1 z (fun i _ k => v i j k))
-  | TensorCollection x y z v, _z => Collection z (fun k => TensorCollection x y 1 (fun i j _ => v i j k))
-  | _,_ => Error
-end.
-
-Inductive Nested_List (T : Type) : Type :=
-  | Elt (x : T)
-  | Nest (l : List (Nested_List T))
-.
-
-Fixpoint to_list (e : execution_resource) : Nested_List execution_resource :=
-  match e with
-  | Collection n v => Nest _ (rev (buildList n (fun i => to_list (v i))))
-  | TensorCollection x y z v => Nest _ (rev (buildList z (fun k => 
-                                Nest _ (rev (buildList y (fun j =>
-                                Nest _ (rev (buildList x (fun i => to_list (v i j k))))))))))
-  | _ => Elt _ e
-end.
-
-Notation "[ l ]" := (Nest _ l).
-Notation "@ x" := (Elt _ x) (at level 20).
-
 Fixpoint leb (x : nat) (y : nat) : bool :=
   match x,y with
   | 0,_ => true
@@ -124,6 +104,15 @@ Fixpoint leb (x : nat) (y : nat) : bool :=
 end.
 
 Notation "x <=? y" := (leb x y).
+
+Fixpoint for_all (e : execution_resource) (d : dimension) : execution_resource :=
+  match e,d with
+  | Collection n v,_ => Collection n (fun i => for_all (v i) d)
+  | TensorCollection x y z v, _x => Collection x (fun i => TensorCollection 1 y z (fun _ j k => v i j k))
+  | TensorCollection x y z v, _y => Collection y (fun j => TensorCollection x 1 z (fun i _ k => v i j k))
+  | TensorCollection x y z v, _z => Collection z (fun k => TensorCollection x y 1 (fun i j _ => v i j k))
+  | _,_ => Error
+end.
 
 Definition assert (cond : bool) (success : execution_resource) : execution_resource :=
   if cond then success else Error.
@@ -137,23 +126,23 @@ Fixpoint sub_selection (e : execution_resource) (l : nat) (r : nat) (d : dimensi
   | _,_ => Error
 end.
 
-Fixpoint blocks (e : execution_resource) : execution_resource :=
+Inductive Nested_List (T : Type) : Type :=
+  | Elt (x : T)
+  | Nest (l : List (Nested_List T))
+.
+
+Fixpoint to_list (e : execution_resource) : Nested_List execution_resource :=
+  (* Transform collections into list for better readability of the examples *)
   match e with
-  | Collection n v => Collection n (fun x => blocks (v x))
-  | TensorCollection x y z v => Collection x (fun i => Collection y (fun j => Collection z (fun k => blocks (v i j k))))
-  | grid (x,y,z) shp' g => TensorCollection x y z (fun i j k => block shp' (i,j,k) (g i j k))
-  | _ => Error
+  | Collection n v => Nest _ (rev (buildList n (fun i => to_list (v i))))
+  | TensorCollection x y z v => Nest _ (rev (buildList z (fun k => 
+                                Nest _ (rev (buildList y (fun j =>
+                                Nest _ (rev (buildList x (fun i => to_list (v i j k))))))))))
+  | _ => Elt _ e
 end.
 
-Fixpoint threads (e : execution_resource) : execution_resource :=
-  match e with
-  | Collection n v => Collection n (fun x => threads (v x))
-  | TensorCollection x y z v => Collection x (fun i => Collection y (fun j => Collection z (fun k =>  threads (v i j k))))
-  | grid (x,y,z) (x',y',z') g => Collection x (fun i => Collection y (fun j => Collection z (fun k => TensorCollection x' y' z' (fun i' j' k' => lthread (g i j k i' j' k')))))
-  | block (x,y,z) _ b => TensorCollection x y z (fun i j k => lthread (b i j k))
-  | warp w => TensorCollection Warp_size 1 1 (fun i _ _ => thread (w i))
-  | _ => Error
-end.
+Notation "[ l ]" := (Nest _ l).
+Notation "@ x" := (Elt _ x) (at level 20).
 
 Fixpoint next_multiple_aux (n : nat) (m : nat) :=
   match n with
@@ -185,6 +174,8 @@ Definition warp_aux (shp : shape) (id : shape) (b : Block_t shp) (f : index_mapp
 end.
 
 Fixpoint warps (e : execution_resource) (f : index_mapping) : execution_resource :=
+  (* e.warps
+  f is a function translating logical indices to physical indices *)
   match e with
   | Collection n v => Collection n (fun x => warps (v x) f)
   | TensorCollection x y z v => Collection x (fun i => Collection y (fun j => Collection z (fun k => warps (v i j k) f)))
@@ -193,7 +184,26 @@ Fixpoint warps (e : execution_resource) (f : index_mapping) : execution_resource
   | _ => Error
 end.
 
+Fixpoint blocks (e : execution_resource) : execution_resource :=
+  match e with
+  | Collection n v => Collection n (fun x => blocks (v x))
+  | TensorCollection x y z v => Collection x (fun i => Collection y (fun j => Collection z (fun k => blocks (v i j k))))
+  | grid (x,y,z) shp' g => TensorCollection x y z (fun i j k => block shp' (i,j,k) (g i j k))
+  | _ => Error
+end.
+
+Fixpoint threads (e : execution_resource) : execution_resource :=
+  match e with
+  | Collection n v => Collection n (fun x => threads (v x))
+  | TensorCollection x y z v => Collection x (fun i => Collection y (fun j => Collection z (fun k =>  threads (v i j k))))
+  | grid (x,y,z) (x',y',z') g => Collection x (fun i => Collection y (fun j => Collection z (fun k => TensorCollection x' y' z' (fun i' j' k' => lthread (g i j k i' j' k')))))
+  | block (x,y,z) _ b => TensorCollection x y z (fun i j k => lthread (b i j k))
+  | warp w => TensorCollection Warp_size 1 1 (fun i _ _ => thread (w i))
+  | _ => Error
+end.
+
 Fixpoint translate (e : execution_resource) (f : ThreadId_t -> PhysicalId_t) : execution_resource :=
+  (* transform logical threads in physical threads using the translation of address f *)
   match e with
   | Collection n v => Collection n (fun x => translate (v x) f)
   | TensorCollection x y z v => TensorCollection x y z (fun i j k => translate (v i j k) f)
@@ -202,6 +212,7 @@ Fixpoint translate (e : execution_resource) (f : ThreadId_t -> PhysicalId_t) : e
 end.
 
 Fixpoint simplify (e : execution_resource) : execution_resource :=
+  (* Simplify collections of size 1 *)
   match e with
   | Collection 1 v => simplify (v 0)
   | Collection n v => Collection n (fun i => simplify (v i))
@@ -229,7 +240,7 @@ Example test2 :
  :: [[@ thread 16 :: @ thread 17 :: []] :: [@ thread 24 :: @ thread 25 :: []] :: []] :: []].
 Proof.
   simpl.
-  rewrite Warp_size_value.
+  rewrite Warp_size_value_8.
   simpl.
   reflexivity.
 Qed.
@@ -242,7 +253,7 @@ Example test3 :
  :: [[@ thread 32 :: @ thread 33 :: []] :: [@ thread 40 :: @ thread 41 :: []] :: []] :: []].
 Proof.
   simpl.
-  rewrite Warp_size_value.
+  rewrite Warp_size_value_8.
   simpl.
   reflexivity.
 Qed.
@@ -260,7 +271,7 @@ Example test4 :
 :: []].
 Proof.
   simpl.
-  rewrite Warp_size_value.
+  rewrite Warp_size_value_8.
   simpl.
   reflexivity.
 Qed.
@@ -287,24 +298,24 @@ Qed.
 Example example2 :
   (to_list (simplify (sub_selection (threads (for_all (for_all (blocks (Grid (XY 2 2) (XY 4 4))) _y) _x)) 0 1 _y))) =
 [[
-      [[[@ lthread (0, 0, 0, (0, 0, 0))
-      :: @ lthread (0, 0, 0, (1, 0, 0))
-      :: @ lthread (0, 0, 0, (2, 0, 0))
-      :: @ lthread (0, 0, 0, (3, 0, 0)) :: []] :: []] :: []]
-  ::  [[[@ lthread (1, 0, 0, (0, 0, 0))
-      :: @ lthread (1, 0, 0, (1, 0, 0))
-      :: @ lthread (1, 0, 0, (2, 0, 0))
-      :: @ lthread (1, 0, 0, (3, 0, 0)) :: []] :: []] :: []]
+      [[[@ lthread ((0, 0, 0), (0, 0, 0))
+      :: @ lthread ((0, 0, 0), (1, 0, 0))
+      :: @ lthread ((0, 0, 0), (2, 0, 0))
+      :: @ lthread ((0, 0, 0), (3, 0, 0)) :: []] :: []] :: []]
+  ::  [[[@ lthread ((1, 0, 0), (0, 0, 0))
+      :: @ lthread ((1, 0, 0), (1, 0, 0))
+      :: @ lthread ((1, 0, 0), (2, 0, 0))
+      :: @ lthread ((1, 0, 0), (3, 0, 0)) :: []] :: []] :: []]
   :: []]
 :: [
-      [[[@ lthread (0, 1, 0, (0, 0, 0))
-      :: @ lthread (0, 1, 0, (1, 0, 0))
-      :: @ lthread (0, 1, 0, (2, 0, 0))
-      :: @ lthread (0, 1, 0, (3, 0, 0)) :: []] :: []] :: []]
-  ::  [[[@ lthread (1, 1, 0, (0, 0, 0))
-      :: @ lthread (1, 1, 0, (1, 0, 0))
-      :: @ lthread (1, 1, 0, (2, 0, 0))
-      :: @ lthread (1, 1, 0, (3, 0, 0)) :: []] :: []] :: []]
+      [[[@ lthread ((0, 1, 0), (0, 0, 0))
+      :: @ lthread ((0, 1, 0), (1, 0, 0))
+      :: @ lthread ((0, 1, 0), (2, 0, 0))
+      :: @ lthread ((0, 1, 0), (3, 0, 0)) :: []] :: []] :: []]
+  ::  [[[@ lthread ((1, 1, 0), (0, 0, 0))
+      :: @ lthread ((1, 1, 0), (1, 0, 0))
+      :: @ lthread ((1, 1, 0), (2, 0, 0))
+      :: @ lthread ((1, 1, 0), (3, 0, 0)) :: []] :: []] :: []]
   :: []]
 :: []]
 .

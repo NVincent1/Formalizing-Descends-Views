@@ -4,6 +4,47 @@ From Views.Execution_resources Require Import Execution_resources.
 From Views.Execution_resources Require Import sets_of_threads.
 Require Import PeanoNat.
 
+(* The excluded middle would not be needed if proofs in this file were limited to 
+their use case, and not with a general type T, as it is relatively easy to prove that for
+any naturals x and y, x = y \/ x <> y, but it is not possible in a general case without
+excluded middle *)
+
+Axiom excluded_middle :
+  forall P,
+  P \/ ~P
+.
+
+(** Properties of `zip` *)
+
+Lemma zip_ok :
+  forall T x (fi : nat -> T),
+    zip (buildList x (fun i : nat => fi i :: [])) =
+    buildList x (fun i : nat => fi i).
+Proof.
+  induction x.
+  - reflexivity.
+  - simpl. intros. rewrite IHx. reflexivity.
+Qed.
+
+Lemma zip_count :
+  forall T (a : T) x (fi : nat -> T) n,
+    count a (zip (buildList x (fun i : nat => fi i :: []))) n <->
+    count a (buildList x (fun i : nat => fi i)) n.
+Proof.
+  intros. split; rewrite zip_ok; intro H; apply H.
+Qed.
+
+Lemma zip_cat :
+  forall T (l1 l2 : List (List T)),
+  zip (l1 ++ l2) = zip l1 ++ zip l2.
+Proof.
+  intros. induction l1.
+  - reflexivity.
+  - simpl. rewrite <- cat_assoc. rewrite IHl1. reflexivity.
+Qed.
+
+(** Properties of `cat` and `count` *)
+
 Lemma cat_count :
   forall T l1 l2 (x : T) m n,
   count x l1 m -> count x l2 n -> count x (l1++l2) (m+n)
@@ -141,11 +182,6 @@ Proof.
     + apply IHl. apply H5. apply H6.
 Qed.
 
-Axiom excluded_middle :
-  forall P,
-  P \/ ~P
-.
-
 Proposition count_exists :
   forall T (x : T) l,
   exists n, count x l n.
@@ -158,31 +194,12 @@ Proof.
       + subst. exists (S x0). apply cons_eq. apply H.
       + exists x0. apply cons_neq. apply H. apply H0.
 Qed.
+
 Lemma cons_cat :
   forall T (x:T) l,
     x::l = (x :: [])++l.
 Proof.
   reflexivity.
-Qed.
-
-Proposition count_impl_equiv :
-  forall T (x : T) l1 l2,
-  (forall n, count x l1 n -> count x l2 n) ->
-  forall n, count x l2 n -> count x l1 n.
-Proof.
-  intros. assert (exists m, count x l1 m). apply count_exists.
-  destruct H1. apply H in H1 as H2. apply count_unicity with (m := x0) in H0. subst. apply H1.
-  apply H2.
-Qed.
-
-Proposition leb_correct :
-  forall a b,
-  a <=? b = true -> a <= b.
-Proof.
-  induction a.
-  - intros. apply le_0_n.
-  - destruct b. intro H. inversion H.
-    simpl. intro H. apply IHa in H. apply le_n_S. apply H.
 Qed.
 
 Proposition count_reorder_2 :
@@ -197,6 +214,8 @@ Proof.
     apply cons_eq. apply IHl2. apply H4.
     apply cons_neq. apply IHl2. apply H4. apply Hneq.
 Qed.
+
+(** Properties of `map` *)
 
 Proposition map_cat :
   forall T T' l1 l2 (f : T -> T'),
@@ -225,29 +244,13 @@ Proof.
   - simpl. rewrite map_cat. rewrite IHn. reflexivity.
 Qed.
 
+(** natural equality and its correctness *)
+
 Fixpoint eqb (m n : nat) :=
   match m,n with
   | 0,0 => true
   | S m, S n => eqb m n
   | _,_ => false
-end.
-
-Fixpoint sum {n : nat} (v : Vector nat n) :=
-  match n with
-  | 0 => 0
-  | S n => v n + sum v (n := n)
-end.
-
-Fixpoint matrixsum {x y : nat} (v : Tensor' nat x y 1) :=
-  match x,y with
-  | S x, S y => sum (n := (S x)) (fun i => v i y 0) + matrixsum (x := S x) (y := y) v
-  | _,_ => 0
-end.
-
-Fixpoint tensorsum {x y z : nat} (v : Tensor' nat x y z) :=
-  match x,y,z with
-  | S x, S y, S z => matrixsum (x := (S x)) (y := S y) (fun i j _=> v i j z) + tensorsum (x := S x) (y := S y) (z := z) v
-  | _,_,_ => 0
 end.
 
 Proposition eqb_correct :
@@ -276,6 +279,39 @@ Proof.
   - reflexivity.
   - apply IHn.
 Qed.
+
+Proposition leb_correct :
+  (* Correctness of natural inequality *)
+  forall a b,
+  a <=? b = true -> a <= b.
+Proof.
+  induction a.
+  - intros. apply le_0_n.
+  - destruct b. intro H. inversion H.
+    simpl. intro H. apply IHa in H. apply le_n_S. apply H.
+Qed.
+
+(** Sum of elements of a (multi-dimensional) vector *)
+
+Fixpoint sum {n : nat} (v : Vector nat n) :=
+  match n with
+  | 0 => 0
+  | S n => v n + sum v (n := n)
+end.
+
+Fixpoint matrixsum {x y : nat} (v : Tensor' nat x y 1) :=
+  match x,y with
+  | S x, S y => sum (n := (S x)) (fun i => v i y 0) + matrixsum (x := S x) (y := y) v
+  | _,_ => 0
+end.
+
+Fixpoint tensorsum {x y z : nat} (v : Tensor' nat x y z) :=
+  match x,y,z with
+  | S x, S y, S z => matrixsum (x := (S x)) (y := S y) (fun i j _=> v i j z) + tensorsum (x := S x) (y := S y) (z := z) v
+  | _,_,_ => 0
+end.
+
+(** Equality of vectors elements implies equality of their sum *)
 
 Proposition vector_sum_eq :
   forall n (v1 v2 : Vector nat n),

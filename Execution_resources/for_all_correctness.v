@@ -46,6 +46,7 @@ Proof.
 Qed.
 
 Proposition for_all_correct :
+  (** If e.forall(d) gives a valid output, then it preserves the number of logical threads *)
   forall i e d m,
   no_error_2 e (fun e => for_all e d) -> count i (logical_thread_set e) m -> count i (logical_thread_set (for_all e d)) m
 .
@@ -94,29 +95,8 @@ Proof.
       apply IHx. apply H2.
 Qed.
 
-Proposition for_all_error :
-  forall e d,
-  for_all e d = Error -> (
-  (exists s i b, e = block s i b) \/
-  (exists s s' g, e = grid s s' g) \/
-  (exists w, e = warp w) \/
-  (exists i, e = thread i) \/
-  (exists i, e = lthread i) \/
-  e = Error
-).
-Proof.
-  destruct e; intros; simpl in *.
-  - right. right. right. left. exists t. reflexivity.
-  - right. right. right. right. left. exists t. reflexivity.
-  - right. right. left. exists w. reflexivity.
-  - left. exists shp,id,b. reflexivity.
-  - right. left. exists shp,shp',g. reflexivity.
-  - inversion H.
-  - destruct d;inversion H.
-  - right. right. right. right. right. reflexivity.
-Qed.
-
 Proposition for_all_correct_physical :
+  (** If e.forall(d) gives a valid output, then it preserves the number of physical threads *)
   forall i e d m f,
   no_error_2 e (fun e => for_all e d) -> count i (physical_thread_set e f) m -> count i (physical_thread_set (for_all e d) f) m
 .
@@ -164,6 +144,8 @@ Proof.
 Qed.
 
 Proposition forall_no_error_case :
+  (** e.forall(d) gives a valid output iff e is a tensor collection of execution_resources
+(or a collection of tensors) *)
   forall e d,
     (exists P, contains_tensorcollection e P) <->
     no_error_2 e (fun e => for_all e d)

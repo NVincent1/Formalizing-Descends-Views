@@ -9,22 +9,16 @@ Axiom FunEquality :
   forall T T' (f g : T -> T'),
   f = g <-> forall x, (f x) = (g x).
 
-Lemma zip_ok :
-  forall T x (fi : nat -> T),
-    zip (buildList x (fun i : nat => fi i :: [])) =
-    buildList x (fun i : nat => fi i).
-Proof.
-  induction x.
-  - reflexivity.
-  - simpl. intros. rewrite IHx. reflexivity.
-Qed.
+(** `forall n, count x l1 n -> count x l2 n` implies that l1 and l2 has the same elements the same amount of time *)
 
-Lemma zip_count :
-  forall T (a : T) x (fi : nat -> T) n,
-    count a (zip (buildList x (fun i : nat => fi i :: []))) n <->
-    count a (buildList x (fun i : nat => fi i)) n.
+Proposition count_impl_equiv :
+  forall T (x : T) l1 l2,
+  (forall n, count x l1 n -> count x l2 n) ->
+  forall n, count x l2 n -> count x l1 n.
 Proof.
-  intros. split; rewrite zip_ok; intro H; apply H.
+  intros. assert (exists m, count x l1 m). apply count_exists.
+  destruct H1. apply H in H1 as H2. apply count_unicity with (m := x0) in H0. subst. apply H1.
+  apply H2.
 Qed.
 
 (** Transpositions (changing the order in which we consider the dimensions) *)
@@ -127,58 +121,6 @@ Proof.
   apply H'.
 Qed.
 
-Lemma transpose_xy_block :
-forall (y z x : nat) a b n,
-count a (thread_set_3xyz x y z
-            (fun x0 : ThreadId_t => x0 :: []) b) n <->
-count a (thread_set_3yxz x y z
-            (fun x0 : ThreadId_t => x0 :: []) b) n.
-Proof.
-  intros.
-  split; rewrite block_ok_xyz; rewrite block_ok_yxz; apply transpose_lemma; apply H.
-Qed.
-
-Lemma transpose_xy_grid :
-forall (y z x : nat) a x' y' z' g n,
-count a (thread_set_3xyz x y z
-          (fun b : nat -> nat -> nat -> ThreadId_t =>
-           thread_set_3xyz x' y' z' (fun x : ThreadId_t => x :: []) b) g) n <->
-count a (thread_set_3yxz x y z
-          (fun b : nat -> nat -> nat -> ThreadId_t =>
-           thread_set_3xyz x' y' z' (fun x : ThreadId_t => x :: []) b) g) n.
-Proof.
-  intros.
-  split; rewrite grid_ok_xyz; rewrite grid_ok_yxz; apply transpose_lemma.
-Qed.
-
-Lemma transpose_xz_block :
-forall (y z x : nat) a b n,
-count a (thread_set_3xyz x y z
-            (fun x0 : ThreadId_t => x0 :: []) b) n <->
-count a (thread_set_3zxy x y z
-            (fun x0 : ThreadId_t => x0 :: []) b) n.
-Proof.
-  intros.
-  split; rewrite block_ok_xyz; rewrite block_ok_zxy.
-  + intro. apply transpose_lemma. apply transpose_lemma'2. apply H.
-  + intro. apply transpose_lemma'2. apply transpose_lemma. apply H.
-Qed.
-
-Lemma transpose_xz_grid :
-forall (y z x : nat) a x' y' z' g n,
-count a (thread_set_3xyz x y z
-          (fun b : nat -> nat -> nat -> ThreadId_t =>
-           thread_set_3xyz x' y' z' (fun x : ThreadId_t => x :: []) b) g) n <->
-count a (thread_set_3zxy x y z
-          (fun b : nat -> nat -> nat -> ThreadId_t =>
-           thread_set_3xyz x' y' z' (fun x : ThreadId_t => x :: []) b) g) n.
-Proof.
-  intros.
-  split; rewrite grid_ok_xyz; rewrite grid_ok_zxy.
-  + intro. apply transpose_lemma. apply transpose_lemma'. apply H.
-  + intro. apply transpose_lemma'. apply transpose_lemma. apply H.
-Qed.
-
 Proposition buildList_end :
   forall T n (f : nat -> T),
   buildList (S n) f = buildList n (fun i => f (S i)) ++ (f 0 :: []).
@@ -188,6 +130,8 @@ Proof.
   - intros. simpl. rewrite <- IHn.
   reflexivity.
 Qed.
+
+(** Subselection of a list gives a subset of the original elements *)
 
 Proposition buildlist_inclusion_right :
   forall T (i:T) n b f m m',
@@ -253,15 +197,6 @@ Proof.
       apply H2.
 Qed.
 
-Lemma zip_cat :
-  forall T (l1 l2 : List (List T)),
-  zip (l1 ++ l2) = zip l1 ++ zip l2.
-Proof.
-  intros. induction l1.
-  - reflexivity.
-  - simpl. rewrite <- cat_assoc. rewrite IHl1. reflexivity.
-Qed.
-
 Proposition zip_buildlist_inclusion_left :
   forall T (i:T) n a f m m',
     count i (zip (buildList (n-a) (fun x => f (x+a)))) m' -> count i (zip (buildList n f)) m -> m' <= m.
@@ -294,6 +229,8 @@ Proof.
   apply Nat.le_trans with (m := m''). apply H0. apply H2.
   apply H. apply H1. apply H2.
 Qed.
+
+(** nuext_multiple n m outputs the smallest multiple of m that is larger or equal to n *)
 
 Lemma next_multiple_unchange_multiple :
   forall n m,
@@ -345,16 +282,6 @@ Proof.
     apply next_multiple_aux_is_a_multiple. apply H.
 Qed.
 
-Lemma mod_decomposition :
-  forall m n,
-  exists k, n = k*m + (n mod m)
-.
-Proof.
-  intros.
-  exists (n/m).
-  rewrite Nat.mul_comm. apply Nat.Div0.div_mod.
-Qed.
-
 Lemma next_multiple_0 :
   forall m,
   next_multiple 0 m = 0.
@@ -372,6 +299,18 @@ Proof.
     rewrite Nat.mul_1_r. reflexivity.
   rewrite H. rewrite next_multiple_unchange_multiple.
   rewrite Nat.mul_1_r. reflexivity.
+Qed.
+
+(** euclidian division *)
+
+Lemma mod_decomposition :
+  forall m n,
+  exists k, n = k*m + (n mod m)
+.
+Proof.
+  intros.
+  exists (n/m).
+  rewrite Nat.mul_comm. apply Nat.Div0.div_mod.
 Qed.
 
 Proposition expand_block :

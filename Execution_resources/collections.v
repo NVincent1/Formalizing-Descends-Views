@@ -7,6 +7,7 @@ From Views.Execution_resources Require Import sets_of_threads.
 Require Import PeanoNat.
 
 Proposition collection_correct :
+  (** The threads in a collection are the union of its content's logical treads *)
   forall a n (v : Vector execution_resource n),
       exists (m : Vector nat n), (forall i, i < n -> count a (logical_thread_set (v i)) (m i)) ->
       count a (logical_thread_set (Collection n v)) (sum m)
@@ -35,6 +36,38 @@ Proof.
         apply H4.
 Qed.
 
+Proposition collection_correct_physical :
+  (** The threads in a collection are the union of its content's physical treads *)
+  forall a n (v : Vector execution_resource n) f,
+      exists (m : Vector nat n), (forall i, i < n -> count a (physical_thread_set (v i) f) (m i)) ->
+      count a (physical_thread_set (Collection n v) f) (sum m)
+.
+Proof.
+  induction n.
+    - exists (fun i => i). intros. apply empty.
+    - intros. assert (exists m : Vector nat n,
+        (forall i : nat, i < n -> count a (physical_thread_set (v i) f) (m i)) ->
+        count a (physical_thread_set (Collection n v) f) (sum m)). apply IHn.
+      destruct H.
+      assert (exists m, count a (physical_thread_set (v n) f) m). apply count_exists.
+      destruct H0.
+      exists (fun i => if (eqb i n) then x0 else x i).
+      intros.
+      simpl. apply cat_count.
+      * rewrite eqb_refl. apply H0.
+      * assert (sum (n := n) (fun i : nat => if eqb i n then x0 else x i) = sum x).
+        apply vector_sum_eq.
+        intros. assert (eqb i n = false). apply eqb_correct_2.
+        intro. subst. apply Nat.lt_irrefl in H2. apply H2. rewrite H3. reflexivity.
+        rewrite H2. apply H.
+        intros. assert (i < (S n)). apply le_S in H3. apply H3.
+        apply H1 in H4. assert (eqb i n = false). apply eqb_correct_2.
+        intro. subst. apply Nat.lt_irrefl in H3. apply H3. rewrite H5 in H4.
+        apply H4.
+Qed.
+
+(** A Tensor collection is a 3-dimensional collection *)
+
 Proposition tensorcollection_correct :
   forall x y z (v : Tensor' execution_resource x y z),
       logical_thread_set (TensorCollection x y z v) =
@@ -43,6 +76,17 @@ Proof.
   reflexivity.
 Qed.
 
+Proposition tensorcollection_correct_physical :
+  forall x y z (v : Tensor' execution_resource x y z) f,
+      physical_thread_set (TensorCollection x y z v) f =
+      physical_thread_set (Collection x (fun i => Collection y (fun j => (Collection z (fun k => v i j k))))) f.
+Proof.
+  reflexivity.
+Qed.
+
+
+(** `contains_tensorcollection e P` hold iff e is a (collection of) tensor collections,
+  whose elements verify (P e) *)
 Fixpoint contains_tensorcollection (e : execution_resource) (P : execution_resource -> Prop) : Prop :=
   match e with
   | Collection n v => forall i, i < n -> contains_tensorcollection (v i) P
@@ -51,6 +95,7 @@ Fixpoint contains_tensorcollection (e : execution_resource) (P : execution_resou
 end.
 
 Proposition blocks_contains_tensorcollection_of_blocks :
+  (** e.blocks is a (collection of) tensor collection of blocks *)
   forall e,
   no_error e blocks -> contains_tensorcollection (blocks e) (fun e => exists shp id b, e = block shp id b).
 Proof.
@@ -62,6 +107,7 @@ Proof.
 Qed.
 
 Proposition threads_contains_tensorcollection_of_threads :
+  (** e.threads is a (collection of) tensor collection of threads *)
   forall e,
   no_error e threads -> contains_tensorcollection (threads e) (fun e => (exists i, e = thread i) \/ (exists i, e = lthread i)).
 Proof.
@@ -75,6 +121,7 @@ Proof.
 Qed.
 
 Proposition warps_contains_tensorcollection_of_warps :
+  (** e.warps is a (collection of) tensor collection of warps *)
   forall e f,
   no_error e (fun e => warps e f) -> contains_tensorcollection (warps e f) (fun e => exists w, e = warp w).
 Proof.
@@ -88,6 +135,7 @@ Proof.
 Qed.
 
 Proposition forall_preserves_tensor_collection :
+  (** if e has a tensor collection e.forall(d) too *)
   forall e d P,
   no_error_2 e (fun e => for_all e d) -> contains_tensorcollection e P -> contains_tensorcollection (for_all e d) P.
 Proof.
@@ -100,6 +148,7 @@ Proof.
 Qed.
 
 Proposition select_preserves_tensor_collection :
+  (** if e has a tensor collection e[l,r]d too *)
   forall e d l r P,
   no_error_2 e (fun e => sub_selection e l r d) -> contains_tensorcollection e P -> contains_tensorcollection (sub_selection e l r d) P.
 Proof.
@@ -138,6 +187,8 @@ Proof.
       * simpl in *. apply H0. reflexivity.
 Qed.
 
+(** Properties of `contains_tensorcollection` *)
+
 Lemma impl_collection :
   forall P P', (forall e, P e -> P' e) ->
   forall e, contains_tensorcollection e P -> contains_tensorcollection e P'.
@@ -165,6 +216,8 @@ Proof.
       assert (eqb i n = false). apply eqb_correct_2. intro; subst. apply Nat.lt_irrefl in H4. apply H4.
       rewrite H5. apply H1. apply H4.
 Qed.
+
+(** Or of a vector of proposition *)
 
 Fixpoint Or {n : nat} (Pi : Vector (execution_resource -> Prop) n) : (execution_resource -> Prop) :=
   match n with

@@ -792,6 +792,7 @@ Proof.
 Qed.
 
 Fixpoint has_block (e : execution_resource) : Prop :=
+  (** True iff e is a block, a grid, or a collection of blocks/grids *)
   match e with
   | Collection n v => forall i, i < n -> has_block (v i)
   | TensorCollection x y z v => forall i j k, i < x -> j < y -> k < z -> has_block (v i j k)
@@ -801,6 +802,7 @@ Fixpoint has_block (e : execution_resource) : Prop :=
 end.
 
 Fixpoint contain_threads (e : execution_resource) : Prop :=
+  (** True iff e is a warp, a block, a grid, or a collection of warps/blocks/grids *)
   match e with
   | Collection n v => forall i, i < n -> contain_threads (v i)
   | TensorCollection x y z v => forall i j k, i < x -> j < y -> k < z -> contain_threads (v i j k)
@@ -811,6 +813,7 @@ Fixpoint contain_threads (e : execution_resource) : Prop :=
 end.
 
 Fixpoint has_grid (e : execution_resource) : Prop :=
+  (** True iff e is a grid, or a collection of grids *)
   match e with
   | Collection n v => forall i, i < n -> has_grid (v i)
   | TensorCollection x y z v => forall i j k, i < x -> j < y -> k < z -> has_grid (v i j k)
@@ -819,6 +822,7 @@ Fixpoint has_grid (e : execution_resource) : Prop :=
 end.
 
 Proposition warps_no_error_case :
+ (** e.warps produces a valid output iff e is a grid or a block (or a collection of grid or blocks) *)
   forall e f,
   has_block e <-> no_error e (fun e => warps e f).
 Proof.
@@ -845,6 +849,7 @@ Proof.
 Qed.
 
 Proposition threads_no_error_case :
+ (** e.threads produces a valid output iff e is a warp, a block or a grid (or a collection of warps/blocks/grids) *)
   forall e,
   contain_threads e <-> no_error e threads.
 Proof.
@@ -873,6 +878,7 @@ Proof.
 Qed.
 
 Proposition blocks_no_error_case :
+  (** e.blocks produces a valid output iff e is a grid or a collection of grids *)
   forall e,
   has_grid e <-> no_error e blocks.
 Proof.

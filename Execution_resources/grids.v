@@ -7,6 +7,8 @@ From Views.Execution_resources Require Import correctness_lemmas.
 From Views.Execution_resources Require Import sets_of_threads.
 Require Import PeanoNat.
 
+(** Proof that grids does not contain indices that has a component larger than the dimensions of the grid *)
+
 Proposition grid_not_contain_larger_on_z :
   forall z x y x' y' z' idx idy idz i j k,
     ((i >= x' \/ j >= y' \/ k >= z') \/ (idx >= x \/ idy >= y \/ idz >= z)) ->
@@ -577,6 +579,8 @@ Proof.
       apply Nat.lt_irrefl in H. apply H.
 Qed.
 
+(** Proof that a slice of a grid does not contain indices that are smaller than the position of the slice *)
+
 Proposition grid_not_contain_smaller_on_z :
   forall x y z x' y' z' idx idy idz i j k,
     (S idx < x \/ S idy < y) ->
@@ -631,6 +635,8 @@ Proof.
     apply IHy with (k := k) (x' := x') (y' := y') (z' := z') (idz := idz) (i := i) (j := j) (z := S z) (idy := idy) in H.
     apply H.
 Qed.
+
+(** Proof that grids contains all indices that are smaller than its dimensions *)
 
 Proposition grid_contain_smaller_on_z :
   forall z x y x' y' z' idx idy idz i j k,
@@ -789,7 +795,7 @@ Proof.
 Qed.
 
 Proposition grid_complete :
-  (** Grid contains indicies that it should contain exactly once *)
+  (** Grid contains exactly once indicies that it should contain *)
   forall x y z x' y' z' i j k i' j' k',
   i' < x' -> j' < y' -> k' < z' -> i < x -> j < y -> k < z ->
   count ((i,j,k),(i',j',k')) (thread_set_3xyz x y z (fun b => thread_set_3xyz x' y' z' (fun x => x :: []) b) 

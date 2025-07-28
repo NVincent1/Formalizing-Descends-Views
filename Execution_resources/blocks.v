@@ -6,6 +6,8 @@ From Views.Execution_resources Require Import correctness_lemmas.
 From Views.Execution_resources Require Import sets_of_threads.
 Require Import PeanoNat.
 
+(** Proof that blocks does not contain indices that has a component larger than the dimensions of the block *)
+
 Proposition block_not_contain_larger_on_z :
   forall idx' idy' idz' idx idy idz x y z i j k,
     (i >= x \/ j >= y \/ k >= z) ->
@@ -114,6 +116,8 @@ Proof.
     intro C. inversion C; subst. apply Nat.lt_irrefl in H. apply H.
 Qed.
 
+(** Proof that a slice of a block does not contain indices that are smaller than the position of the slice *)
+
 Proposition block_not_contain_smaller_on_z :
   forall idx idy idz x y z i j k,
     (S i < x \/ S j < y) ->
@@ -159,6 +163,8 @@ Proof.
     intro C. inversion C. subst.
     apply Nat.lt_irrefl in H. apply H.
 Qed.
+
+(** Proof that blocks contains all indices that are smaller than its dimensions *)
 
 Proposition block_contain_smaller_on_z :
   forall idx idy idz x y z i j k,
@@ -288,6 +294,8 @@ Proof.
     intro C; inversion C; subst.
     apply Nat.lt_irrefl in H3. apply H3.
 Qed.
+
+(** Proof that blocks does not contain indices that are from other block indices *)
 
 Proposition block_not_contain_other_indices_on_z :
   forall idx' idy' idz' idx idy idz x y z i j k,
@@ -471,13 +479,6 @@ Proof.
         (fx := fun i x => i) (fy := fun i x => i) (fz := fun i x => i)).
 Qed.
 
-Lemma cons_cat :
-  forall T (x:T) l,
-    x::l = (x :: [])++l.
-Proof.
-  reflexivity.
-Qed.
-
 
 Proposition block_correct_z :
   forall idx idy idz idx' idy' idz' x y z i j k,
@@ -514,7 +515,7 @@ Proof.
 Qed.
 
 Proposition block_complete :
-  (** Block contains indicies that it should contain exactly once *)
+  (** Block contains exactly once indicies that it should contain *)
   forall idx idy idz x y z i j k,
     i < x -> j < y -> k < z ->
     count ((idx,idy,idz),(i,j,k)) (logical_thread_set (Block' (x,y,z) (idx,idy,idz))) 1.

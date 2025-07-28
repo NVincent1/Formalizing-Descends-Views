@@ -3,6 +3,8 @@ From Views Require Import utils.
 From Views.Execution_resources Require Import Execution_resources.
 Require Import PeanoNat.
 
+(** Set of threads of an execution resource *)
+
 Fixpoint thread_set_1z {T : Type} (x y z : nat) (f : T -> List ThreadId_t) : Tensor T (x,y,z) -> List ThreadId_t :=
   match (x,y,z) with
   | (S x, S y, S z) =>
@@ -79,13 +81,14 @@ Fixpoint physical_thread_set (e : execution_resource) (f : ThreadId_t -> Physica
   | _ => map f (logical_thread_set e)
 end.
 
-
+(** `count x l n` holds iff l countains n times the element x *)
 Inductive count {T : Type} : T -> List T -> nat -> Prop :=
   | empty (x : T) : count x [] 0
   | cons_eq (x : T) (tl : List T) {n : nat} (H : count x tl n) : count x (x::tl) (S n)
   | cons_neq (x : T) (y : T) (tl : List T) {n : nat} (H : count x tl n) (Hneq : x <> y) : count x (y::tl) n
 .
 
+(** Valid output for e.threads, e.blocks, e.warps *)
 Fixpoint no_error (e : execution_resource) (f : execution_resource -> execution_resource) : Prop :=
   match e with
   | Collection n v => forall i, i < n -> (no_error (v i) f)
@@ -93,6 +96,7 @@ Fixpoint no_error (e : execution_resource) (f : execution_resource -> execution_
   | _ => f e <> Error
 end.
 
+(** Valid output for e.forall(d), e[l,r]d *)
 Fixpoint no_error_2 (e : execution_resource) (f : execution_resource -> execution_resource) : Prop :=
   match e with
   | Collection n v => forall i, i < n -> (no_error_2 (v i) f)
@@ -100,6 +104,7 @@ Fixpoint no_error_2 (e : execution_resource) (f : execution_resource -> executio
   | _ => f e <> Error
 end.
 
+(** `not_physical e` holds iff e only contains logical indices *)
 Fixpoint not_physical (e : execution_resource) : Prop :=
   match e with
   | Collection n v => forall i, i < n -> (not_physical (v i))

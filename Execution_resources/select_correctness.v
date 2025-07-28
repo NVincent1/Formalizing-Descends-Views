@@ -66,6 +66,7 @@ Proof.
 Qed.
 
 Proposition select_correct :
+  (** If e[l,r]d gives a valid output, then the result has a subset of the original logical threads *)
   forall i e d m m' l r,
   no_error_2 e (fun e => sub_selection e l r d) -> count i (logical_thread_set e) m -> count i (logical_thread_set (sub_selection e l r d)) m' -> m' <= m
 .
@@ -148,65 +149,8 @@ Proof.
       ++ simpl in *. inversion H2. apply le_0_n.
 Qed.
 
-Proposition select_error :
-  forall e l r d,
-  sub_selection e l r d = Error -> (
-  (exists s i b, e = block s i b) \/
-  (exists s s' g, e = grid s s' g) \/
-  (exists w, e = warp w) \/
-  (exists i, e = thread i) \/
-  (exists i, e = lthread i) \/
-  e = Error \/
-  (d = _x /\ exists x y z v, e = TensorCollection x y z v /\ ~(r <= x)) \/
-  (d = _y /\ exists x y z v, e = TensorCollection x y z v /\ ~(r <= y)) \/
-  (d = _z /\ exists x y z v, e = TensorCollection x y z v /\ ~(r <= z))
-).
-Proof.
-  destruct e; intros; simpl in *.
-  - right. right. right. left. exists t. reflexivity.
-  - right. right. right. right. left. exists t. reflexivity.
-  - right. right. left. exists w. reflexivity.
-  - left. exists shp,id,b. reflexivity.
-  - right. left. exists shp,shp',g. reflexivity.
-  - inversion H.
-  - destruct d.
-    + destruct (r <=? x) eqn:E. inversion H.
-      right. right. right. right. right. right. left.
-      split. reflexivity.
-      exists x,y,z,content. split.
-      reflexivity.
-      intro. assert (forall a b, a <= b -> a <=? b = true). {
-        clear.
-        induction a.
-        * intros. reflexivity.
-        * intros. destruct b. inversion H. simpl. apply le_S_n in H. apply IHa in H. apply H.
-    } apply H1 in H0. rewrite E in H0. inversion H0.
-    + destruct (r <=? y) eqn:E. inversion H.
-      right. right. right. right. right. right. right. left.
-      split. reflexivity.
-      exists x,y,z,content. split.
-      reflexivity.
-      intro. assert (forall a b, a <= b -> a <=? b = true). {
-        clear.
-        induction a.
-        * intros. reflexivity.
-        * intros. destruct b. inversion H. simpl. apply le_S_n in H. apply IHa in H. apply H.
-    } apply H1 in H0. rewrite E in H0. inversion H0.
-    + destruct (r <=? z) eqn:E. inversion H.
-      right. right. right. right. right. right. right. right.
-      split. reflexivity.
-      exists x,y,z,content. split.
-      reflexivity.
-      intro. assert (forall a b, a <= b -> a <=? b = true). {
-        clear.
-        induction a.
-        * intros. reflexivity.
-        * intros. destruct b. inversion H. simpl. apply le_S_n in H. apply IHa in H. apply H.
-    } apply H1 in H0. rewrite E in H0. inversion H0.
-  - right. right. right. right. right. left. reflexivity.
-Qed.
-
 Proposition select_correct_physical :
+  (** If e[l,r]d gives a valid output, then the result has a subset of the original physical threads *)
   forall i e d m m' l r f,
   no_error_2 e (fun e => sub_selection e l r d) -> count i (physical_thread_set e f) m -> count i (physical_thread_set (sub_selection e l r d) f) m' -> m' <= m
 .
@@ -290,6 +234,7 @@ Proof.
 Qed.
 
 Fixpoint inbound (b : nat) (d : dimension) (e : execution_resource) : Prop :=
+  (** returns the conditions on b to be in bound for dimensions d *)
   match e,d with
   | Collection n v,_ => forall i, i < n -> inbound b d (v i)
   | TensorCollection x y z v, _x => b <= x
@@ -299,6 +244,8 @@ Fixpoint inbound (b : nat) (d : dimension) (e : execution_resource) : Prop :=
 end.
 
 Proposition select_no_error :
+  (** e[l,r]d gives a valid output iff e is a tensor collection of execution_resources
+(or a collection of tensors), and r is in bound for dimension d *)
   forall e d l r,
     ((exists P, contains_tensorcollection e P) /\ inbound r d e) <->
     no_error_2 e (fun e => sub_selection e l r d)
