@@ -5,7 +5,7 @@ Require Import PeanoNat.
 Definition Warp_size : nat.
 Proof. apply 0. Qed.
 
-(* As Rocq have performance issues with larger examples,
+(* As Rocq has performance issues with larger examples,
 the size of warps is set to 8 instead of 32 *)
 Axiom Warp_size_value_8 :
   Warp_size = 8.
@@ -220,6 +220,12 @@ Fixpoint simplify (e : execution_resource) : execution_resource :=
   | TensorCollection x y z v => TensorCollection x y z (fun i j k => simplify (v i j k))
   | _ => e
 end.
+
+Notation "e [ l , r ] d" := (sub_selection e l r d) (at level 60).
+Notation "e .forall d" := (for_all e d) (at level 60).
+Notation "e .threads" := (threads e) (at level 60).
+Notation "e .warps" := (warps e) (at level 60).
+Notation "e .blocks" := (blocks e) (at level 60).
 
 (* Examples with Warp_size := 8 *)
 

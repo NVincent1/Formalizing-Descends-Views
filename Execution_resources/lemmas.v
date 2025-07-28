@@ -14,35 +14,6 @@ Axiom excluded_middle :
   P \/ ~P
 .
 
-(** Properties of `zip` *)
-
-Lemma zip_ok :
-  forall T x (fi : nat -> T),
-    zip (buildList x (fun i : nat => fi i :: [])) =
-    buildList x (fun i : nat => fi i).
-Proof.
-  induction x.
-  - reflexivity.
-  - simpl. intros. rewrite IHx. reflexivity.
-Qed.
-
-Lemma zip_count :
-  forall T (a : T) x (fi : nat -> T) n,
-    count a (zip (buildList x (fun i : nat => fi i :: []))) n <->
-    count a (buildList x (fun i : nat => fi i)) n.
-Proof.
-  intros. split; rewrite zip_ok; intro H; apply H.
-Qed.
-
-Lemma zip_cat :
-  forall T (l1 l2 : List (List T)),
-  zip (l1 ++ l2) = zip l1 ++ zip l2.
-Proof.
-  intros. induction l1.
-  - reflexivity.
-  - simpl. rewrite <- cat_assoc. rewrite IHl1. reflexivity.
-Qed.
-
 (** Properties of `cat` and `count` *)
 
 Lemma cat_count :
@@ -213,6 +184,35 @@ Proof.
   inversion H; subst.
     apply cons_eq. apply IHl2. apply H4.
     apply cons_neq. apply IHl2. apply H4. apply Hneq.
+Qed.
+
+(** Properties of `zip` *)
+
+Lemma zip_ok :
+  forall T x (fi : nat -> T),
+    zip (buildList x (fun i : nat => fi i :: [])) =
+    buildList x (fun i : nat => fi i).
+Proof.
+  induction x.
+  - reflexivity.
+  - simpl. intros. rewrite IHx. reflexivity.
+Qed.
+
+Lemma zip_count :
+  forall T (a : T) x (fi : nat -> T) n,
+    count a (zip (buildList x (fun i : nat => fi i :: []))) n <->
+    count a (buildList x (fun i : nat => fi i)) n.
+Proof.
+  intros. split; rewrite zip_ok; intro H; apply H.
+Qed.
+
+Lemma zip_cat :
+  forall T (l1 l2 : List (List T)),
+  zip (l1 ++ l2) = zip l1 ++ zip l2.
+Proof.
+  intros. induction l1.
+  - reflexivity.
+  - simpl. rewrite <- cat_assoc. rewrite IHl1. reflexivity.
 Qed.
 
 (** Properties of `map` *)
