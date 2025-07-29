@@ -124,3 +124,16 @@ Proof.
   rewrite eqb_n_n in Ex;inversion Ex.
 Qed.
 
+Proposition zip_preserves_injectivity_auto_proof : forall T n m, preserve_Injectivity (view (zip m)) (A := (n::m::T)).
+Proof.
+  intros T n m.
+  reordering_autoProof 1.
+  assert (H': i = i0). {
+    apply to_nat_injective.
+    rewrite Nat.Div0.div_mod with (a := to_nat i) (b := m).
+    rewrite Nat.Div0.div_mod with (a := to_nat i0) (b := m).
+    rewrite H1. rewrite H2. reflexivity.
+  }
+  rewrite H'; reflexivity.
+Qed.
+

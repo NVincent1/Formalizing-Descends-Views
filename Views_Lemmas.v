@@ -60,6 +60,20 @@ Lemma uncurry_curry_inverse :
   apply IHA. simpl in H. apply H.
 Qed.
 
+Axiom FunEquality :
+  forall A B (f : A -> B) (g : A -> B),
+  f = g <-> forall x, f x = g x.
+
+Lemma curry_uncurry_inverse :
+  forall A v, uncurry (B := A) (curry_totalApp v) = v.
+  intros A v.
+  induction A.
+  - reflexivity.
+  - simpl. unfold partapp.
+  apply FunEquality. intro.
+  apply IHA.
+Qed.
+
 Fixpoint tupcat {A : List nat} {B : List nat} : Tuple A -> Tuple B -> Tuple (A++B) :=
   match A with
   | [] => fun (_ : Tuple []) (y : Tuple B) => y

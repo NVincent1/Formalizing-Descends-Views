@@ -41,7 +41,7 @@ Definition check {T : List nat} (e : execution_resource) (v : ViewArray T) : Pro
   check_aux (simplify e) (simplify_view v)
 .
 
-Example test :
+Example example :
   forall k, k = 8 \/ k = 4 \/ k = 2 \/ k = 1 ->
   check (sub_selection (threads (Block (X 32))) 0 k _x) (view (group (8/k)) (identity_view (8/k*k))).
 Proof. intros. repeat (destruct H as [H | H]); subst.

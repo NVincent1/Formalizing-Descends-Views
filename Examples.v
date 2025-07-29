@@ -117,6 +117,8 @@ Qed.
 Definition index_identity {T : List nat} {n : nat} (v : ViewArray [[T;n]]) : ViewArray [[;n]] :=
   fun i => to_nat i.
 
+Definition cross (A : Type) (B : Type) : Type := A * B.
+
 Example index_identity_does_not_preserve_injectivity :
   (forall T n, preserve_Injectivity index_identity (A := (n::T))) -> False.
 Proof.
@@ -128,12 +130,79 @@ Proof.
     assert (Injective (identity_view (2*2)) -> Injective (view (group 2) (identity_view (2 * 2)))).
     apply preserve_Injectivity_implies_preserving_view_injectivity. apply group_preserves_injectivity.
     apply H2. apply identity_view_injective.
-  assert (((idx 2 1 H1,I), (idx 2 0 H0,I)) = ((idx 2 0 H0,I), (idx 2 0 H0,I))).
-  apply H with (v := (view (group 2) (identity_view (2*2)))) (C := (2::[]))
-      (i := (idx 2 1 H1,I))
+  assert (((idx 2 1 H1), (idx 2 0 H0,I)) = ((idx 2 0 H0), (idx 2 0 H0,I))).
+  apply H with (v := (view (group 2) (identity_view (2*2)))) 
+      (i := (idx 2 1 H1))
       (x := (idx 2 0 H0,I))
-      (j := (idx 2 0 H0,I))
+      (j := (idx 2 0 H0))
       (y := (idx 2 0 H0,I))
-  . apply H2. simpl. reflexivity.
+  . intros. apply H2. simpl. apply H3. reflexivity.
   inversion H3.
 Qed.
+
+Lemma eta_red :
+  forall T T' (f : T -> T'),
+    (fun (x : T) => f x) = f.
+Proof.
+  intros. reflexivity.
+Qed.
+
+Example zip_group_inverse :
+  forall T m n (v : ViewArray (n::m:: T)), view (group m) (view (zip m) v) = v.
+Proof.
+  intros.
+  unfold zip. simpl. unfold group. simpl. unfold view. simpl.
+  unfold partapp.
+  simpl. apply FunEquality. intro x. apply FunEquality. intro x'.
+  assert (uncurry (
+   curry_totalApp
+     (uncurry
+        (
+         curry_totalApp
+           (v (idx n ((to_nat x' + m * to_nat x) / m)
+                (zipBounded2 (i := idx (m*n) (to_nat x' + m * to_nat x) groupBounded)))
+              (idx m ((to_nat x' + m * to_nat x) mod m) 
+                (zipBounded1 (i := idx (m*n) (to_nat x' + m * to_nat x) groupBounded))))
+      ))) = v x x').
+  rewrite curry_uncurry_inverse.
+  rewrite curry_uncurry_inverse.
+  assert ((idx n ((to_nat x' + m * to_nat x) / m)
+                (zipBounded2 (i := idx (m*n) (to_nat x' + m * to_nat x) groupBounded))) = x). {
+    apply to_nat_injective. simpl.
+    rewrite Nat.mul_comm. rewrite Nat.div_add. rewrite Nat.div_small. reflexivity.
+    apply BoundedInt. intro. subst. inversion x'. inversion H.
+  } rewrite H.
+  assert ((idx m ((to_nat x' + m * to_nat x) mod m)
+                (zipBounded1 (i := idx (m*n) (to_nat x' + m * to_nat x) groupBounded))) = x'). {
+    apply to_nat_injective. simpl.
+    rewrite Nat.mul_comm. rewrite Nat.Div0.mod_add. rewrite Nat.mod_small. reflexivity.
+    apply BoundedInt.
+  } rewrite H0. reflexivity. apply H.
+Qed.
+
+Example group_zip_inverse :
+  forall T m n (v : ViewArray (m*n:: T)), view (zip m) (view (group m) v) = v.
+Proof.
+  intros.
+  unfold zip. simpl. unfold group. simpl. unfold view. simpl.
+  unfold partapp.
+  simpl. apply FunEquality. intro x.
+  assert (uncurry
+  (
+   curry_totalApp
+     (uncurry
+        (
+         curry_totalApp (v (idx (m * n) (to_nat x mod m + m * (to_nat x / m)) 
+          (groupBounded (i := idx m (to_nat x mod m) zipBounded1) (j := idx n (to_nat x / m) zipBounded2))))))
+     ) = v x).
+  rewrite curry_uncurry_inverse.
+  rewrite curry_uncurry_inverse.
+  assert ((idx (m * n) (to_nat x mod m + m * (to_nat x / m)) 
+          (groupBounded (i := idx m (to_nat x mod m) zipBounded1) (j := idx n (to_nat x / m) zipBounded2))) = x).
+    apply to_nat_injective. simpl.
+    rewrite Nat.Div0.div_mod with (b := m).
+    rewrite Nat.add_comm. reflexivity.
+  rewrite H. reflexivity. apply H.
+Qed.
+
+
