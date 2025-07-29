@@ -822,7 +822,7 @@ Fixpoint has_grid (e : execution_resource) : Prop :=
 end.
 
 Proposition warps_no_error_case :
- (** e.warps produces a valid output iff e is a grid or a block (or a collection of grid or blocks) *)
+ (** e.warps produces a valid output iff e is a grid or a block (or a collection of grids or blocks) *)
   forall e f,
   has_block e <-> no_error e (fun e => warps e f).
 Proof.
