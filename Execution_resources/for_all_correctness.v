@@ -48,7 +48,7 @@ Qed.
 Proposition for_all_correct :
   (** If e.forall(d) gives a valid output, then it preserves the number of logical threads *)
   forall i e d m,
-  no_error_2 e (fun e => for_all e d) -> count i (logical_thread_set e) m -> count i (logical_thread_set (for_all e d)) m
+  no_error_w_tensors e (fun e => for_all e d) -> count i (logical_thread_set e) m -> count i (logical_thread_set (for_all e d)) m
 .
 Proof.
   induction e; intros; try (exfalso; apply H; reflexivity).
@@ -64,7 +64,7 @@ Proof.
       * intros. simpl in *. rewrite cat_empty. apply cat_count_rev in H1.
       destruct H1 as [m1 [m2 [H1 [H2 H3]]]]; subst.
       apply cat_count. apply H1. apply IHx. apply H2.
-    + simpl in *. apply transpose_lemma. clear H. clear H0.
+    + simpl in *. apply transpose_lemma_xy_zip. clear H. clear H0.
       generalize dependent m. induction x.
       * intros. apply H1.
       * intros. simpl in *. apply cat_count_rev in H1.
@@ -76,7 +76,7 @@ Proof.
         apply cat_count. rewrite cat_empty. apply H1. apply IHy.
         apply H2.
       apply IHx. apply H2.
-    + simpl in *. apply transpose_lemma. apply transpose_lemma'. clear H. clear H0.
+    + simpl in *. apply transpose_lemma_xy_zip. apply transpose_lemma_yz_zip. clear H. clear H0.
       generalize dependent m. induction x.
       * intros. apply H1.
       * intros. simpl in *. apply cat_count_rev in H1.
@@ -98,7 +98,7 @@ Qed.
 Proposition for_all_correct_physical :
   (** If e.forall(d) gives a valid output, then it preserves the number of physical threads *)
   forall i e d m f,
-  no_error_2 e (fun e => for_all e d) -> count i (physical_thread_set e f) m -> count i (physical_thread_set (for_all e d) f) m
+  no_error_w_tensors e (fun e => for_all e d) -> count i (physical_thread_set e f) m -> count i (physical_thread_set (for_all e d) f) m
 .
 Proof.
   induction e; intros;simpl in *; try (exfalso; apply H; reflexivity).
@@ -112,7 +112,7 @@ Proof.
       * intros. simpl in *. rewrite cat_empty. apply cat_count_rev in H1.
       destruct H1 as [m1 [m2 [H1 [H2 H3]]]]; subst.
       apply cat_count. apply H1. apply IHx. apply H2.
-    + simpl in *. apply transpose_lemma. clear H. clear H0.
+    + simpl in *. apply transpose_lemma_xy_zip. clear H. clear H0.
       generalize dependent m. induction x.
       * intros. apply H1.
       * intros. simpl in *. apply cat_count_rev in H1.
@@ -124,7 +124,7 @@ Proof.
         apply cat_count. rewrite cat_empty. apply H1. apply IHy.
         apply H2.
       apply IHx. apply H2.
-    + simpl in *. apply transpose_lemma. apply transpose_lemma'. clear H. clear H0.
+    + simpl in *. apply transpose_lemma_xy_zip. apply transpose_lemma_yz_zip. clear H. clear H0.
       generalize dependent m. induction x.
       * intros. apply H1.
       * intros. simpl in *. apply cat_count_rev in H1.
@@ -148,7 +148,7 @@ Proposition forall_no_error_case :
 (or a collection of tensors) *)
   forall e d,
     (exists P, contains_tensorcollection e P) <->
-    no_error_2 e (fun e => for_all e d)
+    no_error_w_tensors e (fun e => for_all e d)
 .
 Proof.
   split.

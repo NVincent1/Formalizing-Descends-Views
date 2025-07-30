@@ -26,10 +26,6 @@ Definition Tensor (T : Type) (shp : shape) : Type :=
   match shp with | (x,y,z) => nat -> nat -> nat -> T
 end.
 
-Definition Tensor' (T : Type) (x y z : nat) : Type :=
-  nat -> nat -> nat -> T
-.
-
 Definition Vector (T : Type) (n : nat) : Type :=
   nat -> T
 .
@@ -53,7 +49,7 @@ Inductive execution_resource : Type :=
   | block (shp : shape) (id : LogicalId_t) (b : Block_t shp)
   | grid (shp : shape) (shp' : shape) (g : Grid_t shp shp')
   | Collection (n : nat) (content : Vector execution_resource n)
-  | TensorCollection (x y z : nat) (content : Tensor' execution_resource x y z)
+  | TensorCollection (x y z : nat) (content : Tensor execution_resource (x,y,z))
     (* Used to represent a 3 dimensional collection e of execution resources
     on which we can apply e.forall(d) or e[l,r]d *)
   | Error

@@ -24,6 +24,7 @@ end.
 
 
 Fixpoint check_aux {T : List nat} (e : execution_resource) : ViewArray T -> Prop  :=
+  (* Outputs a proposition that holds iff the execution resource and the viewed array have the same dimensions *)
   match e,T with
   | Collection n content, h::tl => fun (v : ViewArray (h::tl)) =>
         h = n /\ (forall i (H : i < h), check_aux (content i) (v (idx h i H)))

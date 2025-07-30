@@ -23,7 +23,7 @@ Qed.
 
 (** Transpositions (changing the order in which we consider the dimensions) *)
 
-Lemma transpose_lemma :
+Lemma transpose_lemma_xy_zip :
 forall T (a:T) x y n f,
 count a (zip (buildList y (fun j => (zip (buildList x (fun i => f i j)))))) n ->
 count a (zip (buildList x (fun i => (zip (buildList y (fun j => f i j)))))) n.
@@ -53,7 +53,7 @@ Proof.
     apply IHx. apply H1. apply H3.
 Qed.
 
-Lemma transpose_lemma2 :
+Lemma transpose_lemma_xy :
 forall T (a:T) x y n f,
 count a (zip (buildList y (fun j => (buildList x (fun i => f i j))))) n ->
 count a (zip (buildList x (fun i => (buildList y (fun j => f i j))))) n.
@@ -91,7 +91,7 @@ Proof.
     apply H0.
 Qed.
 
-Lemma transpose_lemma' :
+Lemma transpose_lemma_yz_zip :
 forall T (a:T) x y z n f,
 count a (zip (buildList x (fun i => (zip (buildList y (fun j => zip (buildList z (fun k => f i j k)))))))) n ->
 count a (zip (buildList x (fun i => (zip (buildList z (fun k => zip (buildList y (fun j => f i j k)))))))) n.
@@ -102,11 +102,11 @@ Proof.
   destruct H as [m [m' [H [H' H2]]]]. subst.
   apply IHx in H'. clear IHx.
   apply cat_count.
-  apply transpose_lemma. apply H.
+  apply transpose_lemma_xy_zip. apply H.
   apply H'.
 Qed.
 
-Lemma transpose_lemma'2 :
+Lemma transpose_lemma_yz :
 forall T (a:T) x y z n f,
 count a (zip (buildList x (fun i => (zip (buildList y (fun j => (buildList z (fun k => f i j k)))))))) n ->
 count a (zip (buildList x (fun i => (zip (buildList z (fun k => (buildList y (fun j => f i j k)))))))) n.
@@ -117,7 +117,7 @@ Proof.
   destruct H as [m [m' [H [H' H2]]]]. subst.
   apply IHx in H'. clear IHx.
   apply cat_count.
-  apply transpose_lemma2. apply H.
+  apply transpose_lemma_xy. apply H.
   apply H'.
 Qed.
 
@@ -230,7 +230,7 @@ Proof.
   apply H. apply H1. apply H2.
 Qed.
 
-(** nuext_multiple n m outputs the smallest multiple of m that is larger or equal to n *)
+(** `next_multiple n m` outputs the smallest multiple of m that is larger or equal to n *)
 
 Lemma next_multiple_unchange_multiple :
   forall n m,
@@ -282,7 +282,7 @@ Proof.
     apply next_multiple_aux_is_a_multiple. apply H.
 Qed.
 
-Lemma next_multiple_0 :
+Lemma next_multiple_0_m :
   forall m,
   next_multiple 0 m = 0.
 Proof.
@@ -290,7 +290,7 @@ Proof.
   unfold next_multiple. rewrite Nat.Div0.mod_0_l. reflexivity.
 Qed.
 
-Lemma next_multiple_1 :
+Lemma next_multiple_n_1 :
   forall n,
   next_multiple n 1 = n.
 Proof.
@@ -312,6 +312,8 @@ Proof.
   exists (n/m).
   rewrite Nat.mul_comm. apply Nat.Div0.div_mod.
 Qed.
+
+(** Splitting the element count of a block on x dimension *)
 
 Proposition expand_block :
   forall T (i : T) x dx y z n n' f b,
@@ -337,8 +339,8 @@ Proof.
     apply cat_count_rev in H2.
     destruct H2 as [m5 [m6 [H2 [H3 H']]]]; subst.
     rewrite <- plus_n_Sm. simpl.
-    repeat (rewrite block_ok_z in *).
-    repeat (rewrite block_ok_yz in *).
+    repeat (rewrite thread_set_1z_correct_on_block in *).
+    repeat (rewrite thread_set_2yz_correct_on_block in *).
     rewrite cons_cat.
     assert (m1 + (m5 + m6 + m4) + n' = m1 + ((m5 + m6) + (m4 + n'))). {
       clear.
@@ -355,98 +357,7 @@ Proof.
     apply IHdx. split. apply H4. apply H0.
 Qed.
 
-Fixpoint sz {T : Type} (l : List T) :=
-  match l with
-  | [] => 0
-  | h::tl => S (sz tl)
-end.
-
-Inductive contains {T : Type} : T -> List T -> Prop :=
-  | contains_eq (x : T) (l : List T) : contains x (x::l)
-  | contains_cons (x : T) (h : T) (l : List T) (Hcons : contains x l) : contains x (h::l)
-.
-
-Proposition contains_count :
-  forall T (x : T) l,
-    contains x l <-> (forall n, count x l n -> n > 0).
-Proof.
-  induction l.
-  - split; intros. inversion H. assert (count x [] 0). apply empty. apply H in H0. inversion H0.
-  - split; intros.
-    * inversion H; subst.
-      + inversion H0; subst. apply le_n_S. apply le_0_n. exfalso. apply Hneq. reflexivity.
-      + inversion H0; subst. apply le_n_S. apply le_0_n.
-        apply IHl with (n := n) in Hcons. apply Hcons. apply H5.
-    * assert (x = h \/ x <> h). apply excluded_middle.
-      destruct H0. subst. apply contains_eq. apply contains_cons. apply IHl.
-      intros. apply cons_neq with (y := h) in H1.
-      apply H in H1. apply H1. apply H0.
-Qed.
-
-Proposition contains_reorder :
-  forall T (y : T) l,
-  contains y l -> exists l2, (forall x n, count x l n <-> count x (y::l2) n).
-Proof.
-  induction l.
-  - intros. inversion H.
-  - intros. inversion H; subst.
-    + exists l. split;intros; apply H0.
-    + apply IHl in Hcons as Hex.
-    destruct Hex as [l' Hex]. exists (h :: l').
-    intros. split;intros.
-    -- rewrite cons_cat. rewrite count_reorder.
-    simpl. inversion H0; subst.
-      * apply cons_eq. apply Hex. apply H5.
-      * apply cons_neq. apply Hex. apply H5. apply Hneq.
-    -- rewrite cons_cat in H0. rewrite count_reorder in H0.
-    simpl. inversion H0; subst.
-      * apply cons_eq. apply Hex. apply H5.
-      * apply cons_neq. apply Hex. apply H5. apply Hneq.
-Qed.
-
-Proposition contains_reorder_map :
-  forall T T' y (f : T -> T') l,
-  contains (f y) (map f l) -> contains y l -> exists l2, (forall x n, count (f x) (map f l) n <-> count (f x) (map f (y::l2)) n) /\ (forall x n, count x l n <-> count x (y::l2) n).
-Proof.
-  induction l.
-  - intros. inversion H.
-  - intros. inversion H0; subst.
-    + exists l. split;split;intro;apply H1.
-    + apply IHl in Hcons as Hex.
-    destruct Hex as [l' Hex]. exists (h :: l').
-    intros. split;split;intros.
-    -- simpl. rewrite cons_cat. rewrite count_reorder.
-    simpl. inversion H1; subst.
-      * apply cons_eq. apply Hex. apply H6.
-      * apply cons_neq. apply Hex. apply H6. apply Hneq.
-    -- simpl in H1. rewrite cons_cat in H1. rewrite count_reorder in H1.
-    simpl. inversion H1; subst.
-      * apply cons_eq. apply Hex. apply H6.
-      * apply cons_neq. apply Hex. apply H6. apply Hneq.
-    -- simpl. rewrite cons_cat. rewrite count_reorder.
-    simpl. inversion H1; subst.
-      * apply cons_eq. apply Hex. apply H6.
-      * apply cons_neq. apply Hex. apply H6. apply Hneq.
-    -- simpl in H1. rewrite cons_cat in H1. rewrite count_reorder in H1.
-    simpl. inversion H1; subst.
-      * apply cons_eq. apply Hex. apply H6.
-      * apply cons_neq. apply Hex. apply H6. apply Hneq.
-    -- clear H0. clear H. clear IHl. induction l.
-      * inversion Hcons.
-      * simpl. inversion Hcons. apply contains_eq.
-        apply contains_cons. apply IHl. apply Hcons0.
-Qed.
-
-Lemma contains_map :
-  forall T T' x l (f : T -> T'),
-  contains x l -> contains (f x) (map f l).
-Proof.
-  induction l.
-  - intros. inversion H.
-  - intros. simpl. inversion H. apply contains_eq.
-    subst. apply contains_cons. apply IHl. apply Hcons.
-Qed.
-
+(** For f injective, `map f` preserves the occurences of elements in the list it is applied to *)
 
 Proposition map_injection :
   forall T T' l1 (f : T -> T'), (forall x y, f x = f y -> x = y) ->

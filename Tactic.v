@@ -9,7 +9,6 @@ From Ltac2 Require Import Ltac2.
 Ltac2 destruction () :=
   (* destruct the oldest tuple hypothesis *)
   match! reverse goal with
-  | [ h:Tuple [] |- _ ] => let h' := Control.hyp h in destruct $h'
   | [ h:Tuple _ |- _ ] => let h' := Control.hyp h in destruct $h'
 end.
 

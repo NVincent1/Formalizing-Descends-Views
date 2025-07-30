@@ -27,11 +27,11 @@ Proof.
       * rewrite eqb_refl. apply H0.
       * assert (sum (n := n) (fun i : nat => if eqb i n then x0 else x i) = sum x).
         apply vector_sum_eq.
-        intros. assert (eqb i n = false). apply eqb_correct_2.
+        intros. assert (eqb i n = false). apply eqb_correct_contra.
         intro. subst. apply Nat.lt_irrefl in H2. apply H2. rewrite H3. reflexivity.
         rewrite H2. apply H.
         intros. assert (i < (S n)). apply le_S in H3. apply H3.
-        apply H1 in H4. assert (eqb i n = false). apply eqb_correct_2.
+        apply H1 in H4. assert (eqb i n = false). apply eqb_correct_contra.
         intro. subst. apply Nat.lt_irrefl in H3. apply H3. rewrite H5 in H4.
         apply H4.
 Qed.
@@ -57,11 +57,11 @@ Proof.
       * rewrite eqb_refl. apply H0.
       * assert (sum (n := n) (fun i : nat => if eqb i n then x0 else x i) = sum x).
         apply vector_sum_eq.
-        intros. assert (eqb i n = false). apply eqb_correct_2.
+        intros. assert (eqb i n = false). apply eqb_correct_contra.
         intro. subst. apply Nat.lt_irrefl in H2. apply H2. rewrite H3. reflexivity.
         rewrite H2. apply H.
         intros. assert (i < (S n)). apply le_S in H3. apply H3.
-        apply H1 in H4. assert (eqb i n = false). apply eqb_correct_2.
+        apply H1 in H4. assert (eqb i n = false). apply eqb_correct_contra.
         intro. subst. apply Nat.lt_irrefl in H3. apply H3. rewrite H5 in H4.
         apply H4.
 Qed.
@@ -69,7 +69,7 @@ Qed.
 (** A Tensor collection is a 3-dimensional collection *)
 
 Proposition tensorcollection_correct :
-  forall x y z (v : Tensor' execution_resource x y z),
+  forall x y z (v : Tensor execution_resource (x,y,z)),
       logical_thread_set (TensorCollection x y z v) =
       logical_thread_set (Collection x (fun i => Collection y (fun j => (Collection z (fun k => v i j k))))).
 Proof.
@@ -77,7 +77,7 @@ Proof.
 Qed.
 
 Proposition tensorcollection_correct_physical :
-  forall x y z (v : Tensor' execution_resource x y z) f,
+  forall x y z (v : Tensor execution_resource (x,y,z)) f,
       physical_thread_set (TensorCollection x y z v) f =
       physical_thread_set (Collection x (fun i => Collection y (fun j => (Collection z (fun k => v i j k))))) f.
 Proof.
@@ -137,7 +137,7 @@ Qed.
 Proposition forall_preserves_tensor_collection :
   (** if e has a tensor collection e.forall(d) too *)
   forall e d P,
-  no_error_2 e (fun e => for_all e d) -> contains_tensorcollection e P -> contains_tensorcollection (for_all e d) P.
+  no_error_w_tensors e (fun e => for_all e d) -> contains_tensorcollection e P -> contains_tensorcollection (for_all e d) P.
 Proof.
   induction e; try (intros; apply H; reflexivity).
   - simpl in *. intros. apply H. apply H0. apply H2. apply H1. apply H2.
@@ -150,7 +150,7 @@ Qed.
 Proposition select_preserves_tensor_collection :
   (** if e has a tensor collection e[l,r]d too *)
   forall e d l r P,
-  no_error_2 e (fun e => sub_selection e l r d) -> contains_tensorcollection e P -> contains_tensorcollection (sub_selection e l r d) P.
+  no_error_w_tensors e (fun e => sub_selection e l r d) -> contains_tensorcollection e P -> contains_tensorcollection (sub_selection e l r d) P.
 Proof.
   induction e; try (intros; apply H; reflexivity).
   - simpl in *. intros. apply H. apply H0. apply H2. apply H1. apply H2.
@@ -213,7 +213,7 @@ Proof.
     destruct H0 as [P H0]. destruct H1 as [Pi H1].
     exists (fun i => if eqb i n then P else Pi i).
       intros. inversion H2. rewrite eqb_refl. apply H0.
-      assert (eqb i n = false). apply eqb_correct_2. intro; subst. apply Nat.lt_irrefl in H4. apply H4.
+      assert (eqb i n = false). apply eqb_correct_contra. intro; subst. apply Nat.lt_irrefl in H4. apply H4.
       rewrite H5. apply H1. apply H4.
 Qed.
 

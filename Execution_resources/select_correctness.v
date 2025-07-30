@@ -68,7 +68,7 @@ Qed.
 Proposition select_correct :
   (** If e[l,r]d gives a valid output, then the result has a subset of the original logical threads *)
   forall i e d m m' l r,
-  no_error_2 e (fun e => sub_selection e l r d) -> count i (logical_thread_set e) m -> count i (logical_thread_set (sub_selection e l r d)) m' -> m' <= m
+  no_error_w_tensors e (fun e => sub_selection e l r d) -> count i (logical_thread_set e) m -> count i (logical_thread_set (sub_selection e l r d)) m' -> m' <= m
 .
 Proof.
   induction e;intros; try (exfalso; apply H; reflexivity).
@@ -103,7 +103,7 @@ Proof.
         (a := l) (m := m) (m' := m') (i := i)
       in E.
       apply E. apply H2.
-      apply transpose_lemma.
+      apply transpose_lemma_xy_zip.
       clear H2. clear E. clear H0. clear H.
       generalize dependent m. induction x.
       * intros. apply H1.
@@ -127,8 +127,8 @@ Proof.
         (a := l) (m := m) (m' := m') (i := i)
       in E.
       apply E. apply H2.
-      apply transpose_lemma.
-      apply transpose_lemma'.
+      apply transpose_lemma_xy_zip.
+      apply transpose_lemma_yz_zip.
       clear H2. clear E. clear H0. clear H.
       generalize dependent m. induction x.
       * intros. apply H1.
@@ -152,7 +152,7 @@ Qed.
 Proposition select_correct_physical :
   (** If e[l,r]d gives a valid output, then the result has a subset of the original physical threads *)
   forall i e d m m' l r f,
-  no_error_2 e (fun e => sub_selection e l r d) -> count i (physical_thread_set e f) m -> count i (physical_thread_set (sub_selection e l r d) f) m' -> m' <= m
+  no_error_w_tensors e (fun e => sub_selection e l r d) -> count i (physical_thread_set e f) m -> count i (physical_thread_set (sub_selection e l r d) f) m' -> m' <= m
 .
 Proof.
   induction e;intros; try (exfalso; apply H; reflexivity).
@@ -187,7 +187,7 @@ Proof.
         (a := l) (m := m) (m' := m') (i := i)
       in E.
       apply E. apply H2.
-      apply transpose_lemma.
+      apply transpose_lemma_xy_zip.
       clear H2. clear E. clear H0. clear H.
       generalize dependent m. induction x.
       * intros. apply H1.
@@ -211,8 +211,8 @@ Proof.
         (a := l) (m := m) (m' := m') (i := i)
       in E.
       apply E. apply H2.
-      apply transpose_lemma.
-      apply transpose_lemma'.
+      apply transpose_lemma_xy_zip.
+      apply transpose_lemma_yz_zip.
       clear H2. clear E. clear H0. clear H.
       generalize dependent m. induction x.
       * intros. apply H1.
@@ -243,12 +243,12 @@ Fixpoint inbound (b : nat) (d : dimension) (e : execution_resource) : Prop :=
   | _,_ => True
 end.
 
-Proposition select_no_error :
+Proposition select_no_error_case :
   (** e[l,r]d gives a valid output iff e is a tensor collection of execution_resources
 (or a collection of tensors), and r is in bound for dimension d *)
   forall e d l r,
     ((exists P, contains_tensorcollection e P) /\ inbound r d e) <->
-    no_error_2 e (fun e => sub_selection e l r d)
+    no_error_w_tensors e (fun e => sub_selection e l r d)
 .
 Proof.
   split.

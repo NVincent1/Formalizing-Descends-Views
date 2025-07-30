@@ -40,6 +40,8 @@ Definition group {T : List nat} {n : nat} (m : nat) : Tuple (n::m::T) -> Tuple (
 Definition map {A : List nat} {B : List nat} {n : nat} (f : ViewArray A -> ViewArray B) (v : ViewArray [[A;n]]) : ViewArray [[B;n]] :=
   fun i => f (v i).
 
+
+(* zip view, inverse of the group view *)
 Definition zip {T : List nat} {n : nat} (m : nat) : Tuple (m*n::T) -> Tuple (n::m::T) :=
     fun i => match i with | (i,x) => (idx n (to_nat i / m) zipBounded2,(idx m (to_nat i mod m) zipBounded1,x)) end.
 

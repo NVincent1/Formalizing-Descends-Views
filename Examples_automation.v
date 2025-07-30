@@ -117,7 +117,7 @@ Proof.
   try (rewrite Ey' in H);
   try (apply eqb_impl_eq in Ey'; apply to_nat_injective in Ey');
   subst; try reflexivity. (* solve 12 of the 16 cases *)
-  (*  handling the absurd cases *)
+  (* manually handling the absurd cases *)
   rewrite eqb_n_n in Ey';inversion Ey'.
   rewrite eqb_n_n in Ey;inversion Ey.
   rewrite eqb_n_n in Ex';inversion Ex'.

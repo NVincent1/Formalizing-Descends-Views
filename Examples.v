@@ -117,12 +117,10 @@ Qed.
 Definition index_identity {T : List nat} {n : nat} (v : ViewArray [[T;n]]) : ViewArray [[;n]] :=
   fun i => to_nat i.
 
-Definition cross (A : Type) (B : Type) : Type := A * B.
-
 Example index_identity_does_not_preserve_injectivity :
-  (forall T n, preserve_Injectivity index_identity (A := (n::T))) -> False.
+  ~ (forall T n, preserve_Injectivity index_identity (A := (n::T))).
 Proof.
-  intros.
+  intro H.
   unfold preserve_Injectivity in H.
   assert (0 < 2). apply le_n_S. apply le_0_n.
   assert (1 < 2). apply le_n_S. apply le_n.
@@ -140,30 +138,21 @@ Proof.
   inversion H3.
 Qed.
 
-Lemma eta_red :
-  forall T T' (f : T -> T'),
-    (fun (x : T) => f x) = f.
-Proof.
-  intros. reflexivity.
-Qed.
-
-Example zip_group_inverse :
+(* Proving that zip and group are inverses of each other *)
+Proposition zip_group_inverse :
   forall T m n (v : ViewArray (n::m:: T)), view (group m) (view (zip m) v) = v.
 Proof.
   intros.
   unfold zip. simpl. unfold group. simpl. unfold view. simpl.
   unfold partapp.
   simpl. apply FunEquality. intro x. apply FunEquality. intro x'.
-  assert (uncurry (
-   curry_totalApp
-     (uncurry
-        (
-         curry_totalApp
+  assert (uncurry (curry_totalApp
+     (uncurry (curry_totalApp
            (v (idx n ((to_nat x' + m * to_nat x) / m)
                 (zipBounded2 (i := idx (m*n) (to_nat x' + m * to_nat x) groupBounded)))
               (idx m ((to_nat x' + m * to_nat x) mod m) 
-                (zipBounded1 (i := idx (m*n) (to_nat x' + m * to_nat x) groupBounded))))
-      ))) = v x x').
+                (zipBounded1 (i := idx (m*n) (to_nat x' + m * to_nat x) groupBounded)))))))
+              = v x x').
   rewrite curry_uncurry_inverse.
   rewrite curry_uncurry_inverse.
   assert ((idx n ((to_nat x' + m * to_nat x) / m)
@@ -180,21 +169,17 @@ Proof.
   } rewrite H0. reflexivity. apply H.
 Qed.
 
-Example group_zip_inverse :
+Proposition group_zip_inverse :
   forall T m n (v : ViewArray (m*n:: T)), view (zip m) (view (group m) v) = v.
 Proof.
   intros.
   unfold zip. simpl. unfold group. simpl. unfold view. simpl.
   unfold partapp.
   simpl. apply FunEquality. intro x.
-  assert (uncurry
-  (
-   curry_totalApp
-     (uncurry
-        (
-         curry_totalApp (v (idx (m * n) (to_nat x mod m + m * (to_nat x / m)) 
-          (groupBounded (i := idx m (to_nat x mod m) zipBounded1) (j := idx n (to_nat x / m) zipBounded2))))))
-     ) = v x).
+  assert (uncurry (curry_totalApp
+     (uncurry (curry_totalApp (v (idx (m * n) (to_nat x mod m + m * (to_nat x / m)) 
+          (groupBounded (i := idx m (to_nat x mod m) zipBounded1) (j := idx n (to_nat x / m) zipBounded2)))))))
+        = v x).
   rewrite curry_uncurry_inverse.
   rewrite curry_uncurry_inverse.
   assert ((idx (m * n) (to_nat x mod m + m * (to_nat x / m)) 

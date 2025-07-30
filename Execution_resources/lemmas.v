@@ -4,12 +4,12 @@ From Views.Execution_resources Require Import Execution_resources.
 From Views.Execution_resources Require Import sets_of_threads.
 Require Import PeanoNat.
 
-(* The excluded middle would not be needed if proofs in this file were limited to 
-their use case, and not with a general type T, as it is relatively easy to prove that for
-any naturals x and y, x = y \/ x <> y, but it is not possible in a general case without
-excluded middle *)
 
 Axiom excluded_middle :
+(* The excluded middle would not be needed if proofs in this file were limited to 
+the use case in this project, and not with a general type T, as it is relatively easy to prove
+that for any naturals x and y, x = y \/ x <> y,
+but it is not possible in a general case without excluded middle *)
   forall P,
   P \/ ~P
 .
@@ -173,7 +173,7 @@ Proof.
   reflexivity.
 Qed.
 
-Proposition count_reorder_2 :
+Proposition count_inverse :
   forall T l1 l2 (a : T) n,
   count a (l1 ++ l2) n ->
   count a (l2 ++ l1) n.
@@ -188,7 +188,7 @@ Qed.
 
 (** Properties of `zip` *)
 
-Lemma zip_ok :
+Lemma zip_cons :
   forall T x (fi : nat -> T),
     zip (buildList x (fun i : nat => fi i :: [])) =
     buildList x (fun i : nat => fi i).
@@ -203,7 +203,7 @@ Lemma zip_count :
     count a (zip (buildList x (fun i : nat => fi i :: []))) n <->
     count a (buildList x (fun i : nat => fi i)) n.
 Proof.
-  intros. split; rewrite zip_ok; intro H; apply H.
+  intros. split; rewrite zip_cons; intro H; apply H.
 Qed.
 
 Lemma zip_cat :
@@ -262,7 +262,7 @@ Proof.
   - destruct n. intro. inversion H. intro. apply IHm in H. subst; reflexivity.
 Qed.
 
-Proposition eqb_correct_2 :
+Proposition eqb_correct_contra :
   forall m n, m <> n -> eqb m n = false
 .
 Proof.
@@ -299,18 +299,6 @@ Fixpoint sum {n : nat} (v : Vector nat n) :=
   | S n => v n + sum v (n := n)
 end.
 
-Fixpoint matrixsum {x y : nat} (v : Tensor' nat x y 1) :=
-  match x,y with
-  | S x, S y => sum (n := (S x)) (fun i => v i y 0) + matrixsum (x := S x) (y := y) v
-  | _,_ => 0
-end.
-
-Fixpoint tensorsum {x y z : nat} (v : Tensor' nat x y z) :=
-  match x,y,z with
-  | S x, S y, S z => matrixsum (x := (S x)) (y := S y) (fun i j _=> v i j z) + tensorsum (x := S x) (y := S y) (z := z) v
-  | _,_,_ => 0
-end.
-
 (** Equality of vectors elements implies equality of their sum *)
 
 Proposition vector_sum_eq :
@@ -324,39 +312,4 @@ Proof.
     apply IHn in H0. rewrite H0.
     assert (v1 n = v2 n). apply H. apply le_n. rewrite H1.
     reflexivity.
-Qed.
-
-Proposition matrixsum_eq :
-  forall x y (v1 v2 : Tensor' nat x y 1),
-  (forall i j, i < x -> j < y -> v1 i j 0 = v2 i j 0) -> matrixsum v1 = matrixsum v2.
-Proof.
-  induction y.
-  - reflexivity.
-  - intros. simpl. destruct x; try reflexivity. assert (forall i j : nat, i < S x -> j < y -> v1 i j 0 = v2 i j 0).
-    intros. apply H with (j := j) in H0. apply H0. apply le_S in H1. apply H1.
-    apply IHy in H0. rewrite H0.
-    assert (sum (n := x) (fun i : nat => v1 i y 0) = sum (n := x) (fun i : nat => v2 i y 0)).
-      apply vector_sum_eq. intros. apply H. apply le_S in H1. apply H1. apply le_n.
-    rewrite H1.
-    assert (v1 x y 0 = v2 x y 0). apply H. apply le_n. apply le_n.
-    rewrite H2. reflexivity.
-Qed.
-
-Proposition tensorsum_eq :
-  forall x y z (v1 v2 : Tensor' nat x y z),
-  (forall i j k, i < x -> j < y -> k < z -> v1 i j k = v2 i j k) -> tensorsum v1 = tensorsum v2.
-Proof.
-  induction z.
-  - reflexivity.
-  - intros. simpl. destruct x,y; try reflexivity. assert (forall i j k : nat, i < S x -> j < S y -> k < z -> v1 i j k = v2 i j k).
-    intros. apply H with (j := j) (k := k) in H0. apply H0. apply H1. apply le_S in H2. apply H2.
-    apply IHz in H0. rewrite H0.
-    assert (matrixsum (x := S x) (y := y) (fun i j _: nat => v1 i j z) = matrixsum (x := S x) (y := y) (fun i j _ : nat => v2 i j z)).
-      apply matrixsum_eq. intros. apply H. apply H1. apply le_S in H2. apply H2. apply le_n.
-    rewrite H1.
-    assert (sum (n := x) (fun i : nat => v1 i y z) = sum (n := x) (fun i : nat => v2 i y z)).
-      apply vector_sum_eq. intros. apply H. apply le_S in H2. apply H2. apply le_n. apply le_n.
-    rewrite H2.
-    assert (v1 x y z = v2 x y z). apply H. apply le_n. apply le_n. apply le_n.
-    rewrite H3. reflexivity.
 Qed.

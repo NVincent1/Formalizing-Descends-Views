@@ -95,8 +95,8 @@ Proof.
   rewrite H' in *. clear H'. 
   generalize dependent n. induction k.
   - intros. destruct (x mod Warp_size) eqn:E.
-    + subst; simpl in *. rewrite next_multiple_0 in H0.
-      rewrite Nat.Div0.div_0_l in H0. simpl in H0. rewrite next_multiple_0.
+    + subst; simpl in *. rewrite next_multiple_0_m in H0.
+      rewrite Nat.Div0.div_0_l in H0. simpl in H0. rewrite next_multiple_0_m.
       apply H0.
     + simpl in *. subst.
       assert (x mod Warp_size < Warp_size). apply Nat.mod_upper_bound. apply H.
@@ -106,8 +106,8 @@ Proof.
       apply H1. apply le_n_S. apply le_0_n.
       simpl in H2. rewrite H2 in *. rewrite Nat.div_same in *.
       simpl in *. rewrite cat_empty in *.
-      apply transpose_lemma'2 in H0.
-      apply transpose_lemma in H0.
+      apply transpose_lemma_yz in H0.
+      apply transpose_lemma_xy_zip in H0.
       clear E. clear H1. clear H2.
       clear n0. clear H.
       assert (forall T f, map f (B := T)
@@ -133,8 +133,8 @@ Proof.
             + simpl in *. clear. assert (forall T, zip (buildList y (fun _ : nat => Nil T)) = []).
             induction y. reflexivity. apply IHy.  rewrite H.  induction n0. reflexivity. apply IHn0.
             + simpl in *.
-            rewrite block_ok_z.
-            rewrite block_ok_yz.
+            rewrite thread_set_1z_correct_on_block.
+            rewrite thread_set_2yz_correct_on_block.
             rewrite map_cat. rewrite map_cat.
             rewrite map_buildlist.
             assert (forall T f, map (B := T)
@@ -175,9 +175,9 @@ Proof.
       apply IHk in H1.
       rewrite Nat.add_comm.
       apply expand_block.
-      apply transpose_lemma'2 in H0.
-      apply transpose_lemma in H0.
-      split. rewrite block_ok_xyz.
+      apply transpose_lemma_yz in H0.
+      apply transpose_lemma_xy_zip in H0.
+      split. rewrite thread_set_3xyz_correct_on_block.
       assert (forall b, map f
        (zip
           (buildList Warp_size
@@ -232,9 +232,9 @@ Proof.
         rewrite Nat.add_comm. reflexivity.
         rewrite H2. clear H2.
       apply expand_block.
-      apply transpose_lemma'2 in H0.
-      apply transpose_lemma in H0.
-      split. rewrite block_ok_xyz.
+      apply transpose_lemma_yz in H0.
+      apply transpose_lemma_xy_zip in H0.
+      split. rewrite thread_set_3xyz_correct_on_block.
       assert (forall b, map f
        (zip
           (buildList Warp_size
@@ -302,8 +302,8 @@ Proof.
         repeat (rewrite map_cat).
         apply cat_count.
           * clear H1.
-            rewrite grid_ok_z.
-            rewrite grid_ok_yz.
+            rewrite thread_set_1z_correct_on_grid.
+            rewrite thread_set_2yz_correct_on_grid.
             simpl in H0.
             apply cat_count_rev in H0.
             destruct H0 as [m1 [m2 [H0 [H2 H']]]]. subst.
@@ -358,7 +358,7 @@ Proposition blocks_correct :
 Proof.
   induction e; intros; try (exfalso; apply H; reflexivity).
   - destruct shp as [[x y] z], shp' as [[x' y'] z']. simpl in *.
-    rewrite grid_ok_xyz in H0. apply H0.
+    rewrite thread_set_3xyz_correct_on_grid in H0. apply H0.
   - simpl in *. assert (forall i n v n0,
           (forall n' n0, n' < n ->
                 count i (logical_thread_set (v n')) n0 ->
@@ -426,7 +426,7 @@ Proposition blocks_correct_physical :
 Proof.
   induction e; intros; try (exfalso; apply H; reflexivity).
   - destruct shp as [[x y] z], shp' as [[x' y'] z']. simpl in *.
-    rewrite grid_ok_xyz in H0.
+    rewrite thread_set_3xyz_correct_on_grid in H0.
     clear H. generalize dependent m. induction x.
     + intros. apply H0.
     + intros. simpl in *.
@@ -515,7 +515,7 @@ Proof.
   induction e; intros; try (exfalso; apply H; reflexivity).
   - simpl in *. clear H. induction Warp_size. apply H0. apply IHn. 
   - destruct shp as [[x y] z], id as [[idx idy] idz]. simpl in *.
-    rewrite block_ok_xyz in H0.
+    rewrite thread_set_3xyz_correct_on_block in H0.
     clear H. generalize dependent m. induction x.
     + intros. apply H0.
     + intros. simpl in *.
@@ -540,7 +540,7 @@ Proof.
         -- apply IHy. apply H1.
       * apply IHx. apply H1.
   - destruct shp as [[x y] z], shp' as [[x' y'] z']. simpl in *.
-    rewrite grid_ok_xyz in H0.
+    rewrite thread_set_3xyz_correct_on_grid in H0.
     clear H. generalize dependent m. induction x.
     + intros. apply H0.
     + intros. simpl in *.
@@ -558,7 +558,7 @@ Proof.
         --  intros. simpl in *.
             apply cat_count_rev in H0.
             destruct H0 as [m2 [m2' [H0 [H1 H2]]]]. subst.
-            apply cat_count. rewrite block_ok_xyz in H0.
+            apply cat_count. rewrite thread_set_3xyz_correct_on_block in H0.
             clear H1. clear IHz.
             generalize dependent m2. induction x'.
             ++  intros. apply H0.
@@ -662,7 +662,7 @@ Proof.
       apply H0.
       apply IHn. apply H1.
   - destruct shp as [[x y] z], id as [[idx idy] idz]. simpl in *.
-    rewrite block_ok_xyz in H0.
+    rewrite thread_set_3xyz_correct_on_block in H0.
     clear H. generalize dependent m. induction x.
     + intros. apply H0.
     + intros. simpl in *. rewrite map_cat in H0.
@@ -687,7 +687,7 @@ Proof.
         -- apply IHy. apply H1.
       * apply IHx. apply H1.
   - destruct shp as [[x y] z], shp' as [[x' y'] z']. simpl in *.
-    rewrite grid_ok_xyz in H0.
+    rewrite thread_set_3xyz_correct_on_grid in H0.
     clear H. generalize dependent m. induction x.
     + intros. apply H0.
     + intros. simpl in *. rewrite map_cat in H0.
@@ -705,7 +705,7 @@ Proof.
         --  intros. simpl in *. rewrite map_cat in H0.
             apply cat_count_rev in H0.
             destruct H0 as [m2 [m2' [H0 [H1 H2]]]]. subst.
-            apply cat_count. rewrite block_ok_xyz in H0.
+            apply cat_count. rewrite thread_set_3xyz_correct_on_block in H0.
             clear H1. clear IHz.
             generalize dependent m2. induction x'.
             ++  intros. apply H0.

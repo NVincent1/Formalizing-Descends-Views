@@ -97,9 +97,9 @@ Fixpoint no_error (e : execution_resource) (f : execution_resource -> execution_
 end.
 
 (** Valid output for e.forall(d), e[l,r]d *)
-Fixpoint no_error_2 (e : execution_resource) (f : execution_resource -> execution_resource) : Prop :=
+Fixpoint no_error_w_tensors (e : execution_resource) (f : execution_resource -> execution_resource) : Prop :=
   match e with
-  | Collection n v => forall i, i < n -> (no_error_2 (v i) f)
+  | Collection n v => forall i, i < n -> (no_error_w_tensors (v i) f)
   | TensorCollection x y z v => f e <> Error
   | _ => f e <> Error
 end.
@@ -121,7 +121,7 @@ Proof.
 Qed.
 
 (** Rewriting thread_set with buildList *)
-Lemma block_ok_z :
+Lemma thread_set_1z_correct_on_block :
 forall b x y z,
 thread_set_1z (S x) (S y) z (fun x0 : ThreadId_t => x0 :: []) b =
 buildList z (fun k => b x y k).
@@ -132,7 +132,7 @@ Proof.
 Qed.
 
 
-Lemma block_ok_y :
+Lemma thread_set_1y_correct_on_block :
 forall b x y z,
 thread_set_1y (S x) y (S z) (fun x0 : ThreadId_t => x0 :: []) b =
 buildList y (fun k => b x k z).
@@ -142,7 +142,7 @@ Proof.
     + intros. simpl. rewrite IHy. reflexivity.
 Qed.
 
-Lemma block_ok_yz :
+Lemma thread_set_2yz_correct_on_block :
 forall b x y z,
 thread_set_2yz (S x) y z (fun x0 : ThreadId_t => x0 :: []) b =
 zip (buildList y (fun j => (buildList z (fun k => b x j k)))).
@@ -152,10 +152,10 @@ Proof.
     + intros. simpl in *.
     destruct z.
       * simpl. clear. induction y. reflexivity. apply IHy.
-      * simpl. rewrite block_ok_z. rewrite IHy. reflexivity.
+      * simpl. rewrite thread_set_1z_correct_on_block. rewrite IHy. reflexivity.
 Qed.
 
-Lemma block_ok_xz :
+Lemma thread_set_2xz_correct_on_block :
 forall b x y z,
 thread_set_2xz x (S y) z (fun x0 : ThreadId_t => x0 :: []) b =
 zip (buildList x (fun j => (buildList z (fun k => b j y k)))).
@@ -165,10 +165,10 @@ Proof.
     + intros. simpl in *.
     destruct z.
       * simpl. clear. induction x. reflexivity. apply IHx.
-      * simpl. rewrite block_ok_z. rewrite IHx. reflexivity.
+      * simpl. rewrite thread_set_1z_correct_on_block. rewrite IHx. reflexivity.
 Qed.
 
-Lemma block_ok_xy :
+Lemma thread_set_2xy_correct_on_block :
 forall b x y z,
 thread_set_2xy x y (S z) (fun x0 : ThreadId_t => x0 :: []) b =
 zip (buildList x (fun j => (buildList y (fun k => b j k z)))).
@@ -178,10 +178,10 @@ Proof.
     + intros. simpl in *.
     destruct y.
       * simpl. clear. induction x. reflexivity. apply IHx.
-      * simpl. rewrite block_ok_y. rewrite IHx. reflexivity.
+      * simpl. rewrite thread_set_1y_correct_on_block. rewrite IHx. reflexivity.
 Qed.
 
-Lemma block_ok_xyz :
+Lemma thread_set_3xyz_correct_on_block :
 forall b x y z,
 thread_set_3xyz x y z (fun x0 : ThreadId_t => x0 :: []) b =
 zip (buildList x (fun i => (zip (buildList y (fun j => (buildList z (fun k => b i j k))))))).
@@ -193,10 +193,10 @@ Proof.
       * simpl. clear. induction x. reflexivity. apply IHx.
       * simpl. clear. induction x. reflexivity. apply IHx.
       * simpl. clear. induction x. rewrite empty_list. reflexivity. reflexivity. rewrite empty_list. simpl. rewrite empty_list in IHx. apply IHx. reflexivity. reflexivity.
-      * simpl. rewrite block_ok_z. rewrite block_ok_yz. rewrite IHx. reflexivity.
+      * simpl. rewrite thread_set_1z_correct_on_block. rewrite thread_set_2yz_correct_on_block. rewrite IHx. reflexivity.
 Qed.
 
-Lemma block_ok_yxz :
+Lemma thread_set_3yxz_correct_on_block :
 forall b x y z,
 thread_set_3yxz x y z (fun x0 : ThreadId_t => x0 :: []) b =
 zip (buildList y (fun j => (zip (buildList x (fun i => (buildList z (fun k => b i j k))))))).
@@ -208,10 +208,10 @@ Proof.
       * simpl. clear. induction y. reflexivity. apply IHy.
       * simpl. clear. induction y. reflexivity. apply IHy.
       * simpl. clear. induction y. rewrite empty_list. reflexivity. reflexivity. rewrite empty_list. simpl. rewrite empty_list in IHy. apply IHy. reflexivity. reflexivity.
-      * simpl. rewrite block_ok_z. rewrite block_ok_xz. rewrite IHy. simpl. reflexivity.
+      * simpl. rewrite thread_set_1z_correct_on_block. rewrite thread_set_2xz_correct_on_block. rewrite IHy. simpl. reflexivity.
 Qed.
 
-Lemma block_ok_zxy :
+Lemma thread_set_3zxy_correct_on_block :
 forall b z x y,
 thread_set_3zxy x y z (fun x0 : ThreadId_t => x0 :: []) b =
 zip (buildList z (fun k => (zip (buildList x (fun i => (buildList y (fun j => b i j k))))))).
@@ -223,10 +223,10 @@ Proof.
       * simpl. clear. induction z. reflexivity. apply IHz.
       * simpl. clear. induction z. reflexivity. apply IHz.
       * simpl. clear. induction z. rewrite empty_list. reflexivity. reflexivity. rewrite empty_list. simpl. rewrite empty_list in IHz. apply IHz. reflexivity. reflexivity.
-      * simpl. rewrite block_ok_y. rewrite block_ok_xy. rewrite IHz. simpl. reflexivity.
+      * simpl. rewrite thread_set_1y_correct_on_block. rewrite thread_set_2xy_correct_on_block. rewrite IHz. simpl. reflexivity.
 Qed.
 
-Lemma grid_ok_z :
+Lemma thread_set_1z_correct_on_grid :
 forall g x y z x' y' z',
 thread_set_1z (S x) (S y) z
           (fun b : nat -> nat -> nat -> ThreadId_t =>
@@ -239,7 +239,7 @@ Proof.
     + intros. simpl. rewrite IHz. reflexivity.
 Qed.
 
-Lemma grid_ok_y :
+Lemma thread_set_1y_correct_on_grid :
 forall g x y z x' y' z',
 thread_set_1y (S x) y (S z)
           (fun b : nat -> nat -> nat -> ThreadId_t =>
@@ -252,7 +252,7 @@ Proof.
     + intros. simpl. rewrite IHy. reflexivity.
 Qed.
 
-Lemma grid_ok_yz :
+Lemma thread_set_2yz_correct_on_grid :
 forall g x y z x' y' z',
 thread_set_2yz (S x) y z
           (fun b : nat -> nat -> nat -> ThreadId_t =>
@@ -265,10 +265,10 @@ Proof.
     + intros. simpl in *.
     destruct z.
       * intros. simpl. clear. induction y. reflexivity. apply IHy.
-      * intros. simpl. rewrite grid_ok_z. rewrite IHy. reflexivity.
+      * intros. simpl. rewrite thread_set_1z_correct_on_grid. rewrite IHy. reflexivity.
 Qed.
 
-Lemma grid_ok_xz :
+Lemma thread_set_2xz_correct_on_grid :
 forall g x y z x' y' z',
 thread_set_2xz x (S y) z
           (fun b : nat -> nat -> nat -> ThreadId_t =>
@@ -281,10 +281,10 @@ Proof.
     + intros. simpl in *.
     destruct z.
       * intros. simpl. clear. induction x. reflexivity. apply IHx.
-      * intros. simpl. rewrite grid_ok_z. rewrite IHx. reflexivity.
+      * intros. simpl. rewrite thread_set_1z_correct_on_grid. rewrite IHx. reflexivity.
 Qed.
 
-Lemma grid_ok_xy :
+Lemma thread_set_1xy_correct_on_grid :
 forall g x y z x' y' z',
 thread_set_2xy x y (S z)
           (fun b : nat -> nat -> nat -> ThreadId_t =>
@@ -297,10 +297,10 @@ Proof.
     + intros. simpl in *.
     destruct y.
       * intros. simpl. clear. induction x. reflexivity. apply IHx.
-      * intros. simpl. rewrite grid_ok_y. rewrite IHx. reflexivity.
+      * intros. simpl. rewrite thread_set_1y_correct_on_grid. rewrite IHx. reflexivity.
 Qed.
 
-Lemma grid_ok_yxz :
+Lemma thread_set_3yxz_correct_on_grid :
 forall g y x z x' y' z',
 thread_set_3yxz x y z
           (fun b : nat -> nat -> nat -> ThreadId_t =>
@@ -315,10 +315,10 @@ Proof.
       * simpl. clear. induction y. reflexivity. apply IHy.
       * simpl. clear. induction y. reflexivity. apply IHy.
       * simpl. clear. induction y. rewrite empty_list. reflexivity. reflexivity. rewrite empty_list. simpl. rewrite empty_list in IHy. apply IHy. reflexivity. reflexivity.
-      * simpl. rewrite grid_ok_z. rewrite grid_ok_xz. rewrite IHy. reflexivity.
+      * simpl. rewrite thread_set_1z_correct_on_grid. rewrite thread_set_2xz_correct_on_grid. rewrite IHy. reflexivity.
 Qed.
 
-Lemma grid_ok_xyz :
+Lemma thread_set_3xyz_correct_on_grid :
 forall g x y z x' y' z',
 thread_set_3xyz x y z
           (fun b : nat -> nat -> nat -> ThreadId_t =>
@@ -333,10 +333,10 @@ Proof.
       * simpl. clear. induction x. reflexivity. apply IHx.
       * simpl. clear. induction x. reflexivity. apply IHx.
       * simpl. clear. induction x. rewrite empty_list. reflexivity. reflexivity. rewrite empty_list. simpl. rewrite empty_list in IHx. apply IHx. reflexivity. reflexivity.
-      * simpl. rewrite grid_ok_z. rewrite grid_ok_yz. rewrite IHx. reflexivity.
+      * simpl. rewrite thread_set_1z_correct_on_grid. rewrite thread_set_2yz_correct_on_grid. rewrite IHx. reflexivity.
 Qed.
 
-Lemma grid_ok_zxy :
+Lemma thread_set_3zxy_correct_on_grid :
 forall g z x y x' y' z',
 thread_set_3zxy x y z
           (fun b : nat -> nat -> nat -> ThreadId_t =>
@@ -351,7 +351,7 @@ Proof.
       * simpl. clear. induction z. reflexivity. apply IHz.
       * simpl. clear. induction z. reflexivity. apply IHz.
       * simpl. clear. induction z. rewrite empty_list. reflexivity. reflexivity. rewrite empty_list. simpl. rewrite empty_list in IHz. apply IHz. reflexivity. reflexivity.
-      * simpl. rewrite grid_ok_y. rewrite grid_ok_xy. rewrite IHz. reflexivity.
+      * simpl. rewrite thread_set_1y_correct_on_grid. rewrite thread_set_1xy_correct_on_grid. rewrite IHz. reflexivity.
 Qed.
 
 
