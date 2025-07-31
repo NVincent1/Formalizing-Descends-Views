@@ -10,7 +10,7 @@ Require Import PeanoNat.
 
 Theorem physical_thread_correct :
   (** Correctness of physical_thread_set for all execution resources except warps and threads :
-    for an injective indices translation function, it preserves the indices in the set of logical threads *)
+    for an injective index translation function, it preserves the indices in the set of logical threads *)
   forall f, (forall x y, f x = f y -> x = y) ->
   forall a e n, not_physical e -> count a (logical_thread_set e) n -> count (f a) (physical_thread_set e f) n.
 Proof.
@@ -791,11 +791,11 @@ Proof.
     apply H0. apply H3. apply H4. apply H5. apply H6. apply H1.
 Qed.
 
-Fixpoint has_block (e : execution_resource) : Prop :=
+Fixpoint contains_warps (e : execution_resource) : Prop :=
   (** True iff e is a block, a grid, or a collection of blocks/grids *)
   match e with
-  | Collection n v => forall i, i < n -> has_block (v i)
-  | TensorCollection x y z v => forall i j k, i < x -> j < y -> k < z -> has_block (v i j k)
+  | Collection n v => forall i, i < n -> contains_warps (v i)
+  | TensorCollection x y z v => forall i j k, i < x -> j < y -> k < z -> contains_warps (v i j k)
   | block shp id b => True
   | grid shp shp' g => True
   | _ => False
@@ -812,11 +812,11 @@ Fixpoint contain_threads (e : execution_resource) : Prop :=
   | _ => False
 end.
 
-Fixpoint has_grid (e : execution_resource) : Prop :=
+Fixpoint contains_blocks (e : execution_resource) : Prop :=
   (** True iff e is a grid, or a collection of grids *)
   match e with
-  | Collection n v => forall i, i < n -> has_grid (v i)
-  | TensorCollection x y z v => forall i j k, i < x -> j < y -> k < z -> has_grid (v i j k)
+  | Collection n v => forall i, i < n -> contains_blocks (v i)
+  | TensorCollection x y z v => forall i j k, i < x -> j < y -> k < z -> contains_blocks (v i j k)
   | grid shp shp' g => True
   | _ => False
 end.
@@ -824,7 +824,7 @@ end.
 Proposition warps_no_error_case :
  (** e.warps produces a valid output iff e is a grid or a block (or a collection of grids or blocks) *)
   forall e f,
-  has_block e <-> no_error e (fun e => warps e f).
+  contains_warps e <-> no_error e (fun e => warps e f).
 Proof.
   split.
   * induction e; try (intros; exfalso; destruct H; apply H).
@@ -880,7 +880,7 @@ Qed.
 Proposition blocks_no_error_case :
   (** e.blocks produces a valid output iff e is a grid or a collection of grids *)
   forall e,
-  has_grid e <-> no_error e blocks.
+  contains_blocks e <-> no_error e blocks.
 Proof.
   split.
   * induction e; try (intros; exfalso; destruct H; apply H).

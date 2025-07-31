@@ -369,3 +369,101 @@ Proof.
       apply cons_eq. apply IHl1. apply H. apply H5.
       apply cons_neq. apply IHl1. apply H. apply H5. intro. apply H in H1. apply Hneq. apply H1.
 Qed.
+
+(** Inductive steps for correctness proofs of for_all and select *)
+
+Proposition induction_step_collection_select :
+  forall i n v m m' d l r,
+(forall n' n0 n0', n' < n -> count i (logical_thread_set (v n')) n0 ->
+    count i (logical_thread_set (sub_selection (v n') l r d)) n0' -> n0' <= n0) ->
+  count i (zip (buildList n (fun i : nat => logical_thread_set (v i)))) m
+-> count i (zip (buildList n (fun i0 : nat => logical_thread_set (sub_selection (v i0) l r d)))) m'
+-> m' <= m.
+Proof.
+  induction n.
+  + intros. inversion H1. apply le_0_n.
+  + intros. simpl in *.
+  apply cat_count_rev in H0.
+  apply cat_count_rev in H1.
+  destruct H1 as [m1' [m2' [H0' [H1' H2']]]]. subst.
+  destruct H0 as [m1 [m2 [H0 [H1 H2]]]]. subst.
+  assert (forall n' n0 n0' : nat,
+    n' < n ->
+    count i (logical_thread_set (v n')) n0 ->
+    count i (logical_thread_set (sub_selection (v n') l r d)) n0' -> n0' <= n0).
+    intros. apply le_S in H2. apply H with (n0 := n0) (n0' := n0')in H2.
+    apply H2. apply H3. apply H4.
+  apply H with (n0 := m1) in H0'.
+  apply IHn with (m := m2) (m' := m2') (l := l) (r := r) (d := d) in H2.
+  apply Nat.add_le_mono. apply H0'. apply H2.
+  apply H1. apply H1'.
+  apply le_n. apply H0.
+Qed.
+
+
+Proposition induction_step_collection_select_physical :
+  forall i n v m m' d l r f,
+(forall n' n0 n0', n' < n -> count i (physical_thread_set (v n') f) n0 ->
+    count i (physical_thread_set (sub_selection (v n') l r d) f) n0' -> n0' <= n0) ->
+  count i (zip (buildList n (fun i : nat => physical_thread_set (v i) f))) m
+-> count i (zip (buildList n (fun i0 : nat => physical_thread_set (sub_selection (v i0) l r d) f))) m'
+-> m' <= m.
+Proof.
+  induction n.
+  + intros. inversion H1. apply le_0_n.
+  + intros. simpl in *.
+  apply cat_count_rev in H0.
+  apply cat_count_rev in H1.
+  destruct H1 as [m1' [m2' [H0' [H1' H2']]]]. subst.
+  destruct H0 as [m1 [m2 [H0 [H1 H2]]]]. subst.
+  assert (forall n' n0 n0' : nat,
+    n' < n ->
+    count i (physical_thread_set (v n') f) n0 ->
+    count i (physical_thread_set (sub_selection (v n') l r d) f) n0' -> n0' <= n0).
+    intros. apply le_S in H2. apply H with (n0 := n0) (n0' := n0')in H2.
+    apply H2. apply H3. apply H4.
+  apply H with (n0 := m1) in H0'.
+  apply IHn with (m := m2) (m' := m2') (l := l) (r := r) (d := d) in H2.
+  apply Nat.add_le_mono. apply H0'. apply H2.
+  apply H1. apply H1'.
+  apply le_n. apply H0.
+Qed.
+
+Proposition induction_step_collection_forall :
+  forall i n v n0 d,
+(forall n' n0, n' < n -> count i (logical_thread_set (v n')) n0 ->
+    count i (logical_thread_set (for_all (v n') d)) n0) ->
+  count i (zip (buildList n (fun i : nat => logical_thread_set (v i)))) n0
+-> count i (zip (buildList n (fun i0 : nat => logical_thread_set (for_all (v i0) d))))
+  n0.
+Proof.
+  induction n.
+  + intros. apply H0.
+  + intros. simpl in *.
+  apply cat_count_rev in H0.
+  destruct H0 as [m [m' [H0 [H1 H2]]]]. subst.
+  apply cat_count.
+  apply H. apply le_n. apply H0.
+  apply IHn. intros. apply le_S in H2. apply H with (n0 := n0) in H2. apply H2. apply H3.
+  apply H1.
+Qed.
+
+Proposition induction_step_collection_forall_physical :
+  forall i n v n0 d f,
+(forall n' n0, n' < n -> count i (physical_thread_set (v n') f) n0 ->
+    count i (physical_thread_set (for_all (v n') d) f) n0) ->
+  count i (zip (buildList n (fun i : nat => physical_thread_set (v i) f))) n0
+-> count i (zip (buildList n (fun i0 : nat => physical_thread_set (for_all (v i0) d) f)))
+  n0.
+Proof.
+  induction n.
+  + intros. apply H0.
+  + intros. simpl in *.
+  apply cat_count_rev in H0.
+  destruct H0 as [m [m' [H0 [H1 H2]]]]. subst.
+  apply cat_count.
+  apply H. apply le_n. apply H0.
+  apply IHn. intros. apply le_S in H2. apply H with (n0 := n0) in H2. apply H2. apply H3.
+  apply H1.
+Qed.
+
