@@ -3,7 +3,7 @@ Formalizing Descend's views in Rocq and proving properties that we want them to 
 
 `Proof.v` contains the definition of a function that transforms a re-indexing function into a view, and a theorem that proves that, for an injective re-indexing function, this view holds the property that we want (defined in this file as well).
 
-contains proof automation with the tactics in `Tactic.v` (use examples are in `Examples_automation.v`)
+`Tactic.v` contains tactics for proof automation (use examples are in `Examples_automation.v`). 
 
 The folder `Execution_resources` contains a formalization of Descend's execution resources, and proofs that the formalization is correct.
 
