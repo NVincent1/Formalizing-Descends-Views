@@ -41,7 +41,7 @@ Definition map {A : List nat} {B : List nat} {n : nat} (f : ViewArray A -> ViewA
   fun i => f (v i).
 
 
-(* zip view, inverse of the group view *)
-Definition zip {T : List nat} {n : nat} (m : nat) : Tuple (m*n::T) -> Tuple (n::m::T) :=
-    fun i => match i with | (i,x) => (idx n (to_nat i / m) zipBounded2,(idx m (to_nat i mod m) zipBounded1,x)) end.
+(* flatten view, inverse of the group view *)
+Definition flatten {T : List nat} {n : nat} (m : nat) : Tuple (m*n::T) -> Tuple (n::m::T) :=
+    fun i => match i with | (i,x) => (idx n (to_nat i / m) flattenBounded2,(idx m (to_nat i mod m) flattenBounded1,x)) end.
 

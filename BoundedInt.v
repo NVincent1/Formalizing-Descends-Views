@@ -86,13 +86,13 @@ Proof.
   apply Hi. subst. apply Nat.mul_le_mono_l. apply le_S_n in Hj. apply Hj.
 Qed.
 
-Definition zipBounded1 {m : nat} {n : nat} {i : Idx (m*n)} :
+Definition flattenBounded1 {m : nat} {n : nat} {i : Idx (m*n)} :
   m > to_nat i mod m.
 Proof.
   apply Nat.mod_upper_bound. intro. subst. inversion i. simpl in H. inversion H.
 Qed.
 
-Definition zipBounded2 {m : nat} {n : nat} {i : Idx (m*n)} :
+Definition flattenBounded2 {m : nat} {n : nat} {i : Idx (m*n)} :
   n > to_nat i / m.
 Proof.
    apply Nat.Div0.div_lt_upper_bound. apply BoundedInt.

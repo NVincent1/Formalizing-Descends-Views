@@ -124,7 +124,7 @@ Proof.
   rewrite eqb_n_n in Ex;inversion Ex.
 Qed.
 
-Proposition zip_preserves_injectivity_auto_proof : forall T n m, preserve_Injectivity (view (zip m)) (A := (n::m::T)).
+Proposition flatten_preserves_injectivity_auto_proof : forall T n m, preserve_Injectivity (view (flatten m)) (A := (n::m::T)).
 Proof.
   intros T n m.
   reordering_autoProof 1.
