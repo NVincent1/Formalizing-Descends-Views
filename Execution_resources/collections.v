@@ -103,7 +103,7 @@ Proof.
   - simpl in *. intros. destruct shp as [[x y] z], shp' as [[x' y'] z'].
     simpl in *. intros. exists (x',y',z'). exists (i,j,k). exists (g i j k). reflexivity.
   - simpl in *. intros. apply H. apply H0. apply H1.
-  - simpl in *. intros. apply H. apply H0. apply H1. apply H2. apply H3.
+  - simpl in *. intros. apply H. apply H0. apply H3. apply H2. apply H1.
 Qed.
 
 Proposition threads_contains_tensorcollection_of_threads :
@@ -115,9 +115,9 @@ Proof.
   - simpl in *. intros. left. exists (w i). reflexivity.
   - simpl in *. intros. destruct shp as [[x y] z]. simpl. intros. right. exists (b i j k). reflexivity.
   - simpl in *. intros. destruct shp as [[x y] z], shp' as [[x' y'] z'].
-    simpl in *. intros. right. exists (g i i0 i1 i2 j k). reflexivity.
+    simpl in *. intros. right. exists (g i1 i0 i i2 j k). reflexivity.
   - simpl in *. intros. apply H. apply H0. apply H1.
-  - simpl in *. intros. apply H. apply H0. apply H1. apply H2. apply H3.
+  - simpl in *. intros. apply H. apply H0. apply H3. apply H2. apply H1.
 Qed.
 
 Proposition warps_contains_tensorcollection_of_warps :

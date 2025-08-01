@@ -81,86 +81,43 @@ Proposition physical_thread_correct_on_warps :
 Proof. reflexivity. Qed.
 
 Proposition warp_correct_block :
-  (** e.warps for e = block< XYZ<x, y, z> > behaves as if x was the next multiple of Warp_size
-    (e.g. : 64 for x = 60 and Warp_size = 32) *)
+  (** e.warps for e = block< XYZ<x, y, z> > behaves as if e was of shape
+      X< next_multiple (x*y*z) Warp_size >  *) 
   forall x y z idx idy idz,
   let b := block (x,y,z) (idx,idy,idz) (build_block (x,y,z) (idx,idy,idz)) in
-  let b' := block (next_multiple x Warp_size,y,z) (idx,idy,idz) (build_block (next_multiple x Warp_size,y,z) (idx,idy,idz)) in
+  let b' := block (next_multiple (x*y*z) Warp_size,1,1) (idx,idy,idz) (build_block (x,y,z) (idx,idy,idz)) in
   forall i n (f f' : ThreadId_t -> PhysicalId_t), Warp_size <> 0 ->
   count i (physical_thread_set (warps b f) f') n ->
   count i (physical_thread_set b' f) n.
 Proof.
-  intros. assert (H':exists k, x = k*Warp_size + (x mod Warp_size)). apply mod_decomposition.
+  intros. assert (H':exists k, x*y*z = k*Warp_size + ((x*y*z) mod Warp_size)). apply mod_decomposition.
   destruct H' as [k H']. simpl in *.  clear b. clear b'.
   rewrite H' in *. clear H'. 
   generalize dependent n. induction k.
-  - intros. destruct (x mod Warp_size) eqn:E.
+  - intros. destruct ((x*y*z) mod Warp_size) eqn:E.
     + subst; simpl in *. rewrite next_multiple_0_m in H0.
       rewrite Nat.Div0.div_0_l in H0. simpl in H0. rewrite next_multiple_0_m.
       apply H0.
     + simpl in *. subst.
-      assert (x mod Warp_size < Warp_size). apply Nat.mod_upper_bound. apply H.
+      assert ((x*y*z) mod Warp_size < Warp_size). apply Nat.mod_upper_bound. apply H.
       rewrite E in H1.
       assert (next_multiple (0*Warp_size + (S n0)) Warp_size = Warp_size).
       rewrite next_multiple_is_a_multiple. rewrite Nat.mul_1_l. reflexivity.
       apply H1. apply le_n_S. apply le_0_n.
       simpl in H2. rewrite H2 in *. rewrite Nat.div_same in *.
       simpl in *. rewrite cat_empty in *.
-      apply transpose_lemma_yz in H0.
-      apply transpose_lemma_xy_zip in H0.
       clear E. clear H1. clear H2.
-      clear n0. clear H.
-      assert (forall T f, map f (B := T)
-     (thread_set_3xyz Warp_size y z (fun x : ThreadId_t => x :: [])
-        (fun i0 j k : nat => (idx, idy, idz, (i0, j, k)))) = (zip
-          (buildList Warp_size
-             (fun i : nat =>
-              zip
-                (buildList y
-                   (fun j : nat =>
-                    buildList z
-                      (fun j0 : nat =>
-                       f (idx, idy, idz, (i, j, j0))))))))). {
-          clear H0.
-          generalize dependent y.
-          generalize dependent z.
-          induction Warp_size.
-          - intros. reflexivity.
-          - intros. simpl in *.
-            destruct y,z.
-            + simpl in *. clear. induction n0. reflexivity. apply IHn0.
-            + simpl in *. clear. induction n0. reflexivity. apply IHn0.
-            + simpl in *. clear. assert (forall T, zip (buildList y (fun _ : nat => Nil T)) = []).
-            induction y. reflexivity. apply IHy.  rewrite H.  induction n0. reflexivity. apply IHn0.
-            + simpl in *.
-            rewrite thread_set_1z_correct_on_block.
-            rewrite thread_set_2yz_correct_on_block.
-            rewrite map_cat. rewrite map_cat.
-            rewrite map_buildlist.
-            assert (forall T f, map (B := T)
-            f
-            (zip
-               (buildList y
-                  (fun j : nat => buildList (S z) (fun k : nat => (idx, idy, idz, (n0, j, k)))))) =
-              zip
-            (buildList y
-               (fun j : nat =>
-                buildList (S z)
-                     (fun j0 : nat =>
-                      f (idx, idy, idz, (n0, j, j0)))))).
-                {
-                  intros. rewrite map_zip_buildlist. simpl.
-                  clear. induction y.
-                  reflexivity. simpl. rewrite map_buildlist. rewrite IHy. reflexivity.
-            }
-            rewrite H. clear H. simpl.
-            rewrite IHn0. reflexivity.
-      } rewrite H. simpl.
-      clear H. assert (next_multiple (1*Warp_size) Warp_size = 1*Warp_size). apply next_multiple_unchange_multiple.
-      apply H0.
+      clear n0. clear H. rewrite thread_set_3xyz_correct_on_block.
+      generalize dependent n. induction Warp_size.
+      * intros. apply H0.
+      * intros. simpl in *.
+        inversion H0; subst.
+        -- apply cons_eq. apply IHn. apply H4.
+        -- apply cons_neq. apply IHn. apply H4. apply Hneq.
+      *
       apply H.
   - intros. simpl in *.
-    destruct (x mod Warp_size) eqn:E.
+    destruct ((x*y*z) mod Warp_size) eqn:E.
     + simpl in *. rewrite Nat.add_0_r in *.
       assert (next_multiple (S k * Warp_size) Warp_size = S k * Warp_size). apply next_multiple_unchange_multiple.
       simpl in H1. rewrite H1 in *. clear H1.
@@ -175,44 +132,26 @@ Proof.
       apply IHk in H1.
       rewrite Nat.add_comm.
       apply expand_block.
-      apply transpose_lemma_yz in H0.
-      apply transpose_lemma_xy_zip in H0.
       split. rewrite thread_set_3xyz_correct_on_block.
-      assert (forall b, map f
-       (zip
-          (buildList Warp_size
-             (fun i0 : nat =>
-              zip
-                (buildList y
-                   (fun j : nat =>
-                    buildList z (fun k0 : nat => b i0 j k0))))))
-        = zip
-            (buildList Warp_size
-               (fun i : nat =>
-                zip
-                  (buildList y
-                     (fun j : nat =>
-                      buildList z (fun j0 : nat => f (b i j j0))))))).
-        {
-          clear. intros.
-          rewrite map_zip_buildlist.
+      clear H1. clear IHk. clear E. clear H. simpl.
+      assert (forall n, count i
+       ((buildList Warp_size
+           (fun i : nat => f (idx, idy, idz, (k * n + i, 0, 0))) ++ []) ++ []) m ->
+        count i
+        (map f
+           (zip
+              (buildList Warp_size
+                 (fun i0 : nat => (idx, idy, idz, (k * n + i0, 0, 0)) :: [])))) m). {
+          clear.
+          generalize dependent m.
           induction Warp_size.
-          - reflexivity.
-          - simpl. rewrite IHn.
-          assert (map f (zip (buildList y (fun j : nat => buildList z (fun k0 : nat => b n j k0))))
-          = zip (buildList y (fun j : nat => buildList z (fun j0 : nat => f (b n j j0))))).
-            {
-              clear.
-              rewrite map_zip_buildlist.
-              induction y. reflexivity.
-              simpl. rewrite IHy.
-              rewrite map_buildlist. reflexivity.
-            }
-          rewrite H. reflexivity.
-        }
-        rewrite H2. apply H0.
-        apply H1.
-    + simpl in *. assert (x mod Warp_size < Warp_size). apply Nat.mod_upper_bound. apply H.
+            intros. apply H.
+            intros. simpl in H. simpl. inversion H; subst. simpl. apply cons_eq. apply IHn. apply H4.
+            simpl. apply cons_neq. apply IHn. apply H4. apply Hneq.
+      }
+      apply H. apply H0.
+      apply H1.
+    + simpl in *. assert ((x*y*z) mod Warp_size < Warp_size). apply Nat.mod_upper_bound. apply H.
       rewrite E in H1.
       assert (next_multiple (S k * Warp_size + S n0) Warp_size = S (S k) * Warp_size). apply next_multiple_is_a_multiple.
       apply H1. apply le_n_S. apply le_0_n.
@@ -232,53 +171,32 @@ Proof.
         rewrite Nat.add_comm. reflexivity.
         rewrite H2. clear H2.
       apply expand_block.
-      apply transpose_lemma_yz in H0.
-      apply transpose_lemma_xy_zip in H0.
       split. rewrite thread_set_3xyz_correct_on_block.
-      assert (forall b, map f
-       (zip
-          (buildList Warp_size
-             (fun i0 : nat =>
-              zip
-                (buildList y
-                   (fun j : nat =>
-                    buildList z (fun k0 : nat => b i0 j k0))))))
-        = zip
-            (buildList Warp_size
-               (fun i : nat =>
-                zip
-                  (buildList y
-                     (fun j : nat =>
-                      buildList z (fun j0 : nat => f (b i j j0))))))).
-        {
-          clear. intros.
-          rewrite map_zip_buildlist.
+      assert (forall n, count i
+       ((buildList Warp_size
+           (fun i : nat => f (idx, idy, idz, (S k * n + i, 0, 0))) ++ []) ++ []) m ->
+        count i
+        (map f
+           (zip
+              (buildList Warp_size
+                 (fun i0 : nat => (idx, idy, idz, (S k * n + i0, 0, 0)) :: [])))) m). {
+          clear.
+          generalize dependent m.
           induction Warp_size.
-          - reflexivity.
-          - simpl. rewrite IHn.
-          assert (map f (zip (buildList y (fun j : nat => buildList z (fun k0 : nat => b n j k0))))
-          = zip (buildList y (fun j : nat => buildList z (fun j0 : nat => f (b n j j0))))).
-            {
-              clear.
-              rewrite map_zip_buildlist.
-              induction y. reflexivity.
-              simpl. rewrite IHy.
-              rewrite map_buildlist. reflexivity.
-            }
-          rewrite H. reflexivity.
-        }
-        rewrite H2. apply H0.
+            intros. apply H.
+            intros. simpl in H. simpl. inversion H; subst. simpl. apply cons_eq. apply IHn. apply H4.
+            simpl. apply cons_neq. apply IHn. apply H4. apply Hneq.
+      } simpl in *. apply H2 in H0. apply H0.
         apply H1.
 Qed.
 
 Proposition warp_correct_grid :
-  (** e.warps for e = grid< XYZ<x, y, z>, XYZ<x', y', z'> > behaves as if x' was the next multiple of Warp_size
-    (e.g. : 64 for x' = 60 and Warp_size = 32)
-    (x' is the size of the blocks inside the grid)
+  (** e.warps for e = grid< XYZ<x, y, z>, XYZ<x', y', z'> > behaves as if e was of shape
+    <XYZ<x,y,z>, X< next_multiple (x*y*z) Warp_size > >
 *)
   forall x y z x' y' z',
   let g := grid (x,y,z) (x',y',z') (build_grid (x,y,z) (x',y',z')) in
-  let g' := grid (x,y,z) (next_multiple x' Warp_size,y',z') (build_grid (x,y,z) (next_multiple x' Warp_size,y',z')) in
+  let g' := grid (x,y,z) (next_multiple (x'*y'*z') Warp_size,1,1) (build_grid (x,y,z) (x',y',z')) in
   forall i n (f f' : ThreadId_t -> PhysicalId_t), Warp_size <> 0 ->
   count i (physical_thread_set (warps g f) f') n ->
   count i (physical_thread_set g' f) n.
@@ -385,7 +303,8 @@ Proof.
                 count a (logical_thread_set (blocks (v i j k))) n) ->
             count a (logical_thread_set (TensorCollection x y z v)) n ->
             count a (logical_thread_set (blocks (TensorCollection x y z v))) n). {
-        clear.
+        clear. intros. simpl. apply transpose_lemma_yz_zip. apply transpose_lemma_xy_zip.
+        apply transpose_lemma_yz_zip. generalize dependent n.
         induction x.
         + intros. apply H0.
         + intros. simpl in *.
@@ -473,7 +392,8 @@ Proof.
                 count a (physical_thread_set (blocks (v i j k)) f) n) ->
             count a (physical_thread_set (TensorCollection x y z v) f) n ->
             count a (physical_thread_set (blocks (TensorCollection x y z v)) f) n). {
-        clear.
+        clear. intros. simpl. apply transpose_lemma_yz_zip. apply transpose_lemma_xy_zip.
+        apply transpose_lemma_yz_zip. generalize dependent n.
         induction x.
         + intros. apply H0.
         + intros. simpl in *.
@@ -541,7 +461,8 @@ Proof.
       * apply IHx. apply H1.
   - destruct shp as [[x y] z], shp' as [[x' y'] z']. simpl in *.
     rewrite thread_set_3xyz_correct_on_grid in H0.
-    clear H. generalize dependent m. induction x.
+    clear H.  intros. simpl. apply transpose_lemma_yz_zip. apply transpose_lemma_xy_zip.
+    apply transpose_lemma_yz_zip. generalize dependent m. induction x.
     + intros. apply H0.
     + intros. simpl in *.
       apply cat_count_rev in H0.
@@ -612,7 +533,8 @@ Proof.
                 count a (logical_thread_set (threads (v i j k))) n) ->
             count a (logical_thread_set (TensorCollection x y z v)) n ->
             count a (logical_thread_set (threads (TensorCollection x y z v))) n). {
-        clear.
+        clear. intros. simpl. apply transpose_lemma_yz_zip. apply transpose_lemma_xy_zip.
+        apply transpose_lemma_yz_zip. generalize dependent n.
         induction x.
         + intros. apply H0.
         + intros. simpl in *.
@@ -688,7 +610,8 @@ Proof.
       * apply IHx. apply H1.
   - destruct shp as [[x y] z], shp' as [[x' y'] z']. simpl in *.
     rewrite thread_set_3xyz_correct_on_grid in H0.
-    clear H. generalize dependent m. induction x.
+    clear H. intros. simpl. apply transpose_lemma_yz_zip. apply transpose_lemma_xy_zip.
+    apply transpose_lemma_yz_zip. generalize dependent m. induction x.
     + intros. apply H0.
     + intros. simpl in *. rewrite map_cat in H0.
       apply cat_count_rev in H0.
@@ -759,7 +682,8 @@ Proof.
                 count a (physical_thread_set (threads (v i j k)) f) n) ->
             count a (physical_thread_set (TensorCollection x y z v) f) n ->
             count a (physical_thread_set (threads (TensorCollection x y z v)) f) n). {
-        clear.
+        clear. intros. simpl. apply transpose_lemma_yz_zip. apply transpose_lemma_xy_zip.
+        apply transpose_lemma_yz_zip. generalize dependent n.
         induction x.
         + intros. apply H0.
         + intros. simpl in *.
