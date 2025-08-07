@@ -160,7 +160,7 @@ Definition get_physical_id (shp : shape) (shp' : shape) : index_mapping :=
   match shp,shp',id with
   | (x,y,z),(x',y',z'),((i,j,k),(i',j',k')) =>
     let s := next_multiple (x' * y' * z') Warp_size in
-    i*s+j*x*s + k*y*z*s + i' + x'*j' + x'*y'*k'
+    i*s+j*x*s + k*x*y*s + i' + x'*j' + x'*y'*k'
 end.
 
 Definition warp_aux (shp : shape) (id : shape) (b : Block_t shp) (f : index_mapping) :=

@@ -301,6 +301,28 @@ Proof.
   rewrite Nat.mul_1_r. reflexivity.
 Qed.
 
+Lemma next_multiple_lt_0 :
+  forall n m, n > 0 -> m <> 0 -> next_multiple n m > 0.
+Proof.
+  intros.
+  destruct n,m.
+  + inversion H.
+  + inversion H.
+  + exfalso. apply H0. reflexivity.
+  + rewrite Nat.Div0.div_mod with (a := S n) (b := S m).
+  destruct (S n mod S m) eqn : E.
+    * rewrite Nat.add_0_r. rewrite Nat.mul_comm. rewrite next_multiple_unchange_multiple.
+      assert (S n >= S m). apply Nat.Div0.mod_divides in E. destruct E.
+      destruct x. rewrite Nat.mul_0_r in H1. rewrite H1 in H. inversion H.
+      rewrite H1. rewrite <- Nat.mul_1_r. apply Nat.mul_le_mono_l.
+      apply le_n_S. apply le_0_n. rewrite Nat.mul_comm.
+      apply Nat.Div0.div_exact in E. rewrite <- E. apply Nat.lt_0_succ.
+    * rewrite Nat.mul_comm. rewrite next_multiple_is_a_multiple.
+      rewrite <- Nat.mul_0_r with (n := 0). apply Nat.mul_lt_mono.
+      apply Nat.lt_0_succ. apply Nat.lt_0_succ.
+      rewrite <- E. apply Nat.mod_upper_bound. apply H0. apply Nat.lt_0_succ.
+Qed.
+
 (** euclidian division *)
 
 Lemma mod_decomposition :

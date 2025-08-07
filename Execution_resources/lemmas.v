@@ -313,3 +313,33 @@ Proof.
     assert (v1 n = v2 n). apply H. apply le_n. rewrite H1.
     reflexivity.
 Qed.
+
+Proposition map_count_0 :
+  forall A B (f : A -> B) l y, (forall x, f x = y -> count x l 0) -> count y (map f l) 0.
+    induction l. intros. apply empty.
+        intros. simpl. apply cons_neq. apply IHl.
+        intros. apply H in H0. inversion H0. apply H5.
+        intro. symmetry in H0. apply H in H0. inversion H0. apply Hneq. reflexivity.
+Qed.
+
+Proposition map_count_1 :
+  forall A B (f : A -> B) X l y, f X = y -> count X l 1 -> (forall x, f x = y -> x = X \/ count x l 0) -> count y (map f l) 1.
+    induction l.
+      + intros. inversion H0.
+      + intros. simpl. inversion H0.
+        * rewrite H2 in *. rewrite <- H. apply cons_eq.
+          assert (forall x, f x = y -> count x l 0). {
+            intros. apply H1 in H7. destruct H7.
+            - subst.  apply H4.
+            - inversion H7. apply H12.
+          } apply map_count_0 in H7. subst. apply H7.
+        * apply IHl in H as H'. assert (f h <> y).
+          intro. apply H1 in H7. destruct H7. symmetry in H7. apply Hneq in H7. apply H7.
+          inversion H7. apply Hneq0. reflexivity.
+          apply cons_neq. apply H'. symmetry. apply H7. apply H6.
+          intros. apply H1 in H7. destruct H7. left. apply H7.
+          right. inversion H7. apply H12.
+Qed.
+
+
+
